@@ -94,3 +94,11 @@ or
 ```Bash
 java -jar target/Monolit.jar
 ```
+
+## 🔐 Security
+
+The project uses Spring Security:
+
+- Basic authentication (default)
+- Extendable to JWT/OAuth2
+- Protecting REST endpoints
