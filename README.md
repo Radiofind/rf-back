@@ -105,10 +105,6 @@ The project uses Spring Security:
 
 ## 📡 API
 
-Base URL:
+Base URL: http://localhost:8080
 
-http://localhost:8080
-
-Example endpoint:
-
-GET /api/v1/...
+Example endpoint: GET /api/v1/...
