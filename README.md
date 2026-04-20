@@ -129,3 +129,7 @@ Spring Validation is used:
 - Clean architecture (Controller → Service → Repository)
 - Using DTOs to isolate a Model
 - Minifying boilerplate code with Lombok
+
+## 📄 License
+
+The project is distributed under the MIT license.
