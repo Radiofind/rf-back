@@ -67,3 +67,30 @@ spring:
       name: admin
       password: admin
 ```
+
+## ▶️ Project run
+
+1. Cloning a repo
+
+```Bash
+git clone https://github.com/your-username/rf-back.git
+cd rf-back
+```
+
+2. Building the project
+
+```Bash
+mvn clean install
+```
+
+3. Running the application
+
+```Bash
+mvn spring-boot:run
+```
+
+or
+
+```Bash
+java -jar target/Monolit.jar
+```
