@@ -123,3 +123,9 @@ Spring Validation is used:
 - Used PostgreSQL
 - ORM: Hibernate (JPA)
 - Repositories via JpaRepository
+
+## 📌 Peculiarities
+
+- Clean architecture (Controller → Service → Repository)
+- Using DTOs to isolate a Model
+- Minifying boilerplate code with Lombok
