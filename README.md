@@ -102,3 +102,13 @@ The project uses Spring Security:
 - Basic authentication (default)
 - Extendable to JWT/OAuth2
 - Protecting REST endpoints
+
+## 📡 API
+
+Base URL:
+
+http://localhost:8080
+
+Example endpoint:
+
+GET /api/v1/...
