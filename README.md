@@ -108,3 +108,12 @@ The project uses Spring Security:
 Base URL: http://localhost:8080
 
 Example endpoint: GET /api/v1/...
+
+## 🧪 Validation
+
+Spring Validation is used:
+
+- @NotNull
+- @Size
+- @Email
+- other annotations
