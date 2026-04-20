@@ -117,3 +117,9 @@ Spring Validation is used:
 - @Size
 - @Email
 - other annotations
+
+## 🛢️ Work with the database
+
+- Used PostgreSQL
+- ORM: Hibernate (JPA)
+- Repositories via JpaRepository
