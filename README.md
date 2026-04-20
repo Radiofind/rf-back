@@ -26,22 +26,22 @@ Backend application for the **RadioFind** system, built using Spring Boot. The p
 
 ## 📁 Project structure
 
-rf-back/
-├── src/
-│ ├── main/
-│ │ ├── java/com/radiofind/
-│ │ │ ├── config/ # Configurations (Security, Beans)
-│ │ │ ├── controller/ # REST controllers
-│ │ │ ├── service/ # Business logic
-│ │ │ ├── repository/ # JPA repos
-│ │ │ ├── model/ # Entities
-│ │ │ └── dto/ # Data Transfer Objects
-│ │ └── resources/
-│ │ ├── application.yml
-│ │ └── db/
-│ │ └── migration/ # (optional) Migrations
-├── pom.xml
-└── README.md
+rf-back/.  
+├── src/.  
+│ ├── main/.  
+│ │ ├── java/com/radiofind/.  
+│ │ │ ├── config/ # Configurations (Security, Beans).  
+│ │ │ ├── controller/ # REST controllers.  
+│ │ │ ├── service/ # Business logic.  
+│ │ │ ├── repository/ # JPA repos.  
+│ │ │ ├── model/ # Entities.  
+│ │ │ └── dto/ # Data Transfer Objects.  
+│ │ └── resources/.  
+│ │ ├── application.yml.  
+│ │ └── db/.  
+│ │ └── migration/ # (optional) Migrations.  
+├── pom.xml.  
+└── README.md.
 
 ## ⚙️ Configuration
 
