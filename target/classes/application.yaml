@@ -3,9 +3,9 @@ spring:
     name: monolit
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/radiofind
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: password
+    password: кфвшщ
 
   jpa:
     hibernate:
@@ -16,5 +16,5 @@ server:
   port: 8080
 
 jwt:
-  secret: my-very-super-puper-secret-super-puper-key
+  secret: jwt.secret=my-super-secret-key-that-is-at-least-32-bytes
   expiration: 86400000

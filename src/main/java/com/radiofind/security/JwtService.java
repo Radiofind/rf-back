@@ -13,13 +13,15 @@ import java.security.Key;
 @Service
 public class JwtService {
 
-  @Value("${jwt.secret}")
-  private String secret;
+  private final long expiration;
+  private final Key key;
 
-  @Value("${jwt.expiration}")
-  private long expiration;
-
-  private Key key = Keys.hmacShaKeyFor(secret.getBytes());
+  public JwtService(
+      @Value("${jwt.secret}") String secret,
+      @Value("${jwt.expiration}") long expiration) {
+    this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    this.expiration = expiration;
+  }
 
   public String generateToken(User user) {
     return Jwts.builder()
