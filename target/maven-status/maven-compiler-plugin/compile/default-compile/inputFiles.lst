@@ -6,7 +6,11 @@
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/auth/service/AuthService.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/config/PasswordConfig.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/config/SecurityConfig.java
+/Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/security/CustomUserDetails.java
+/Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/security/CustomUserDetailsService.java
+/Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/security/JwtAuthenticationFilter.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/security/JwtService.java
+/Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/test/TestController.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/user/entity/Role.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/user/entity/SubscriptionType.java
 /Users/aleksandr/Desktop/dev/radiofind/rf-back/src/main/java/com/radiofind/user/entity/User.java
