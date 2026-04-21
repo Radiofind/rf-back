@@ -30,12 +30,12 @@ rf-back/.
 ├── src/.  
 │ ├── main/.  
 │ │ ├── java/com/radiofind/.  
-│ │ │ ├── config/ # Configurations (Security, Beans).  
-│ │ │ ├── controller/ # REST controllers.  
-│ │ │ ├── service/ # Business logic.  
-│ │ │ ├── repository/ # JPA repos.  
-│ │ │ ├── model/ # Entities.  
-│ │ │ └── dto/ # Data Transfer Objects.  
+│ │ │ ├── auth/.  
+│ │ │ ├── config/.  
+│ │ │ ├── exception/.  
+│ │ │ ├── security/.  
+│ │ │ ├── track/.  
+│ │ │ └── user/.  
 │ │ └── resources/.  
 │ │ ├── application.yml.  
 │ │ └── db/.  
