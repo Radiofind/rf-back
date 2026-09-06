@@ -1,6 +1,9 @@
 package com.radiofind.auth.service;
 
 import com.radiofind.auth.dto.*;
+import com.radiofind.auth.entity.TwoFactorChallenge;
+import com.radiofind.auth.repository.TwoFactorChallengeRepository;
+import com.radiofind.notification.service.EmailService;
 import com.radiofind.security.JwtService;
 import com.radiofind.user.entity.*;
 import com.radiofind.user.repository.UserRepository;
@@ -10,16 +13,26 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+  private static final int CODE_LENGTH = 6;
+  private static final int CODE_EXPIRATION_MINUTES = 5;
+  private static final int MAX_ATTEMPTS = 5;
+
   private final UserRepository userRepository;
   private final ArtistProfileRepository artistProfileRepository;
+  private final TwoFactorChallengeRepository twoFactorChallengeRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final EmailService emailService;
+
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public AuthResponse register(RegisterRequest request) {
 
@@ -62,6 +75,7 @@ public class AuthService {
 
     return AuthResponse.builder()
         .token(token)
+        .requiresTwoFactor(false)
         .build();
   }
 
@@ -71,11 +85,78 @@ public class AuthService {
         .orElseThrow(() -> new RuntimeException("User not found"));
 
     if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-      throw new RuntimeException("Invalid password");
+      throw new RuntimeException("Invalid email or password");
     }
 
-    String token = jwtService.generateToken(user);
+    String code = generateCode();
 
-    return new AuthResponse(token);
+    String challengeId = UUID.randomUUID().toString();
+
+    TwoFactorChallenge challenge = TwoFactorChallenge.builder()
+        .challengeId(challengeId)
+        .user(user)
+        .codeHash(passwordEncoder.encode(code))
+        .expiresAt(
+            LocalDateTime.now()
+                .plusMinutes(CODE_EXPIRATION_MINUTES))
+        .used(false)
+        .attempts(0)
+        .build();
+
+    twoFactorChallengeRepository.save(challenge);
+
+    emailService.sendTwoFactorCode(user.getEmail(), code);
+
+    return AuthResponse.builder()
+        .requiresTwoFactor(true)
+        .challengeId(challengeId)
+        .build();
+  }
+
+  public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request) {
+
+    TwoFactorChallenge challenge = twoFactorChallengeRepository
+        .findByChallengeId(request.getChallengeId())
+        .orElseThrow(() -> new RuntimeException("Invalid verification request"));
+
+    if (challenge.isUsed()) {
+      throw new RuntimeException("Verification code has already been used");
+    }
+
+    if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
+      throw new RuntimeException("Verification code has expired");
+    }
+
+    if (challenge.getAttempts() >= MAX_ATTEMPTS) {
+      throw new RuntimeException("Too many attempts");
+    }
+
+    challenge.setAttempts(challenge.getAttempts() + 1);
+
+    if (!passwordEncoder.matches(
+        request.getCode(),
+        challenge.getCodeHash())) {
+      twoFactorChallengeRepository.save(challenge);
+
+      throw new RuntimeException("Invalid verification code");
+    }
+
+    challenge.setUsed(true);
+
+    twoFactorChallengeRepository.save(challenge);
+
+    String token = jwtService.generateToken(challenge.getUser());
+
+    return AuthResponse.builder()
+        .token(token)
+        .requiresTwoFactor(false)
+        .build();
+  }
+
+  private String generateCode() {
+
+    int code = secureRandom.nextInt(1_000_000);
+
+    return String.format("%0" + CODE_LENGTH + "d", code);
   }
 }
