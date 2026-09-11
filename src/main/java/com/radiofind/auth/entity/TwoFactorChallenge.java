@@ -33,6 +33,9 @@ public class TwoFactorChallenge {
   private LocalDateTime expiresAt;
 
   @Column(nullable = false)
+  private LocalDateTime lastSentAt;
+
+  @Column(nullable = false)
   private boolean used;
 
   @Column(nullable = false)

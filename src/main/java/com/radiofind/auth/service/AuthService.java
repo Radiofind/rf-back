@@ -24,6 +24,7 @@ public class AuthService {
   private static final int CODE_LENGTH = 6;
   private static final int CODE_EXPIRATION_MINUTES = 5;
   private static final int MAX_ATTEMPTS = 5;
+  private static final int RESEND_COOLDOWN_SECONDS = 45;
 
   private final UserRepository userRepository;
   private final ArtistProfileRepository artistProfileRepository;
@@ -99,6 +100,7 @@ public class AuthService {
         .expiresAt(
             LocalDateTime.now()
                 .plusMinutes(CODE_EXPIRATION_MINUTES))
+        .lastSentAt(LocalDateTime.now())
         .used(false)
         .attempts(0)
         .build();
@@ -150,6 +152,49 @@ public class AuthService {
     return AuthResponse.builder()
         .token(token)
         .requiresTwoFactor(false)
+        .build();
+  }
+
+  public AuthResponse resendTwoFactor(ResendTwoFactorRequest request) {
+
+    TwoFactorChallenge challenge = twoFactorChallengeRepository
+        .findByChallengeId(request.getChallengeId())
+        .orElseThrow(() -> new RuntimeException("Invalid verification request"));
+
+    if (challenge.isUsed()) {
+      throw new RuntimeException("Verification code has already been used");
+    }
+
+    LocalDateTime now = LocalDateTime.now();
+
+    if (challenge.getExpiresAt().isBefore(now)) {
+      throw new RuntimeException("Verification request has expired");
+    }
+
+    LocalDateTime nextAllowedSendTime = challenge
+        .getLastSentAt()
+        .plusSeconds(RESEND_COOLDOWN_SECONDS);
+
+    if (now.isBefore(nextAllowedSendTime)) {
+      throw new RuntimeException("Please wait before requesting a new code");
+    }
+
+    String code = generateCode();
+
+    challenge.setCodeHash(passwordEncoder.encode(code));
+
+    challenge.setAttempts(0);
+
+    challenge.setLastSentAt(now);
+
+    twoFactorChallengeRepository.save(challenge);
+
+    emailService.sendTwoFactorCode(challenge.getUser().getEmail(), code);
+
+    return AuthResponse.builder()
+        .token(null)
+        .requiresTwoFactor(true)
+        .challengeId(challenge.getChallengeId())
         .build();
   }
 
