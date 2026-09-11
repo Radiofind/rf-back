@@ -27,4 +27,9 @@ public class AuthController {
   public AuthResponse verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest request) {
     return authService.verifyTwoFactor(request);
   }
+
+  @PostMapping("/resend-2fa")
+  public AuthResponse resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
+    return authService.resendTwoFactor(request);
+  }
 }
