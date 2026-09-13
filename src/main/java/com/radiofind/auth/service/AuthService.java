@@ -1,21 +1,27 @@
 package com.radiofind.auth.service;
 
 import com.radiofind.auth.dto.*;
-import com.radiofind.auth.entity.TwoFactorChallenge;
-import com.radiofind.auth.repository.TwoFactorChallengeRepository;
+import com.radiofind.auth.entity.*;
+import com.radiofind.auth.repository.*;
 import com.radiofind.notification.service.EmailService;
 import com.radiofind.security.JwtService;
 import com.radiofind.user.entity.*;
 import com.radiofind.user.repository.UserRepository;
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.repository.ArtistProfileRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +31,7 @@ public class AuthService {
   private static final int CODE_EXPIRATION_MINUTES = 5;
   private static final int MAX_ATTEMPTS = 5;
   private static final int RESEND_COOLDOWN_SECONDS = 45;
+  private static final int PASSWORD_RESET_EXPIRATION_MINUTES = 15;
 
   private final UserRepository userRepository;
   private final ArtistProfileRepository artistProfileRepository;
@@ -32,8 +39,12 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final EmailService emailService;
+  private final PasswordResetTokenRepository passwordResetTokenRepository;
 
   private final SecureRandom secureRandom = new SecureRandom();
+
+  @Value("${app.frontend-url}")
+  private String frontendUrl;
 
   public AuthResponse register(RegisterRequest request) {
 
@@ -198,10 +209,95 @@ public class AuthService {
         .build();
   }
 
+  @Transactional
+  public void forgotPassword(ForgotPasswordRequest request) {
+
+    userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+
+      passwordResetTokenRepository.deleteByUserAndUsedFalse(user);
+
+      String rawToken = generatePasswordResetToken();
+
+      String tokenHash = hashToken(rawToken);
+
+      PasswordResetToken resetToken = PasswordResetToken.builder()
+          .tokenHash(tokenHash)
+          .user(user)
+          .createdAt(LocalDateTime.now())
+          .expiresAt(LocalDateTime.now().plusMinutes(PASSWORD_RESET_EXPIRATION_MINUTES))
+          .used(false)
+          .build();
+
+      passwordResetTokenRepository.save(resetToken);
+
+      String resetLink = frontendUrl + "/auth/reset-password?token=" + rawToken;
+
+      emailService.sendPasswordResetLink(user.getEmail(), resetLink);
+    });
+  }
+
+  @Transactional
+  public void resetPassword(ResetPasswordRequest request) {
+
+    String tokenHash = hashToken(request.getToken());
+
+    PasswordResetToken resetToken = passwordResetTokenRepository
+        .findByTokenHash(tokenHash)
+        .orElseThrow(() -> new RuntimeException("Invalid password reset token"));
+
+    if (resetToken.isUsed()) {
+      throw new RuntimeException("Password reset token has already been used");
+    }
+
+    if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+      throw new RuntimeException("Password reset token has expired");
+    }
+
+    User user = resetToken.getUser();
+
+    user.setPassword(
+        passwordEncoder.encode(
+            request.getNewPassword()));
+
+    userRepository.save(user);
+
+    resetToken.setUsed(true);
+
+    passwordResetTokenRepository.save(resetToken);
+  }
+
   private String generateCode() {
 
     int code = secureRandom.nextInt(1_000_000);
 
     return String.format("%0" + CODE_LENGTH + "d", code);
+  }
+
+  private String generatePasswordResetToken() {
+
+    byte[] randomBytes = new byte[32];
+
+    secureRandom.nextBytes(randomBytes);
+
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+  }
+
+  private String hashToken(String token) {
+
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
+      byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+
+      StringBuilder hexString = new StringBuilder();
+
+      for (byte b : hash) {
+        hexString.append(String.format("%02x", b));
+      }
+
+      return hexString.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 algorithm is not available", e);
+    }
   }
 }

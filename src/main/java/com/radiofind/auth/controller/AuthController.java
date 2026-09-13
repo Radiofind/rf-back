@@ -2,9 +2,10 @@ package com.radiofind.auth.controller;
 
 import com.radiofind.auth.dto.*;
 import com.radiofind.auth.service.AuthService;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,5 +32,17 @@ public class AuthController {
   @PostMapping("/resend-2fa")
   public AuthResponse resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
     return authService.resendTwoFactor(request);
+  }
+
+  @PostMapping("/forgot-password")
+  public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    authService.forgotPassword(request);
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    authService.resetPassword(request);
+    return ResponseEntity.ok().build();
   }
 }

@@ -36,4 +36,32 @@ public class EmailService {
 
     mailSender.send(message);
   }
+
+  public void sendPasswordResetLink(String email, String resetLink) {
+
+    SimpleMailMessage message = new SimpleMailMessage();
+
+    message.setTo(email);
+    message.setSubject("RADIOFIND - Password Reset");
+
+    message.setText(
+        """
+            Hello!
+
+            We received a request to reset your RADIOFIND password.
+
+            Click the link below to create a new password:
+
+            %s
+
+            This link is valid for 15 minutes.
+
+            If you did not request a password reset, you can safely ignore this email.
+
+            Best regards,
+            RADIOFIND team
+            """.formatted(resetLink));
+
+    mailSender.send(message);
+  }
 }
