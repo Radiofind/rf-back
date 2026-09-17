@@ -266,6 +266,20 @@ public class AuthService {
     passwordResetTokenRepository.save(resetToken);
   }
 
+  public ValidatePasswordResetTokenResponse validatePasswordResetToken(ValidatePasswordResetTokenRequest request) {
+
+    String tokenHash = hashToken(request.getToken());
+
+    boolean valid = passwordResetTokenRepository
+      .findByTokenHash(tokenHash)
+      .map(resetToken -> !resetToken.isUsed() && resetToken.getExpiresAt().isAfter(LocalDateTime.now()))
+      .orElse(false);
+
+    return ValidatePasswordResetTokenResponse.builder()
+      .valid(valid)
+      .build();
+  }
+
   private String generateCode() {
 
     int code = secureRandom.nextInt(1_000_000);
