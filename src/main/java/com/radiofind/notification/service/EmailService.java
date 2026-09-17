@@ -1,67 +1,96 @@
 package com.radiofind.notification.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import jakarta.mail.MessagingException;
+
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
+  private static final int TWO_FACTOR_CODE_EXPIRATION_MINUTES = 5;
+  private static final int PASSWORD_RESET_EXPIRATION_MINUTES = 15;
+
   private final JavaMailSender mailSender;
+  private final SpringTemplateEngine templateEngine;
 
   public void sendTwoFactorCode(String email, String code) {
+    Context context = new Context();
 
-    SimpleMailMessage message = new SimpleMailMessage();
+    context.setVariable("code", code);
 
-    message.setTo(email);
-    message.setSubject("RADIOFIND - Two Factor Authentication Code");
+    context.setVariable("expirationMinutes", TWO_FACTOR_CODE_EXPIRATION_MINUTES);
 
-    message.setText(
-        """
-            Hello!
+    String htmlContent = templateEngine.process("email/two-factor-code", context);
 
-            Your RADIOFIND verifcation code is:
+    String plainText = """
+        RADIOFIND
 
-            %s
+        Two-Factor Authentication
 
-            This code is valid for 5 minutes.
+        Your verification code is:
 
-            If you did not try to log in to RADIOFIND, please ignore this email.
+        %s
 
-            Best regards,
-            RADIOFIND team
-            """.formatted(code));
+        This code is valid for %d minutes.
 
-    mailSender.send(message);
+        If you did not try to log in to RADIOFIND,
+        you can safely ignore this email.
+        """.formatted(code, TWO_FACTOR_CODE_EXPIRATION_MINUTES);
+
+    sendEmail(email, "RADIOFIND - Two Factor Authentication Code", plainText, htmlContent);
   }
 
   public void sendPasswordResetLink(String email, String resetLink) {
+    Context context = new Context();
 
-    SimpleMailMessage message = new SimpleMailMessage();
+    context.setVariable("resetLink", resetLink);
 
-    message.setTo(email);
-    message.setSubject("RADIOFIND - Password Reset");
+    context.setVariable("expirationMinutes", PASSWORD_RESET_EXPIRATION_MINUTES);
 
-    message.setText(
-        """
-            Hello!
+    String htmlContent = templateEngine.process("email/password-reset", context);
 
-            We received a request to reset your RADIOFIND password.
+    String plainText = """
+        RADIOFIND
 
-            Click the link below to create a new password:
+        Password Reset
 
-            %s
+        We received a request to reset your RADIOFIND password.
 
-            This link is valid for 15 minutes.
+        Open the following link to create a new password:
 
-            If you did not request a password reset, you can safely ignore this email.
+        %s
 
-            Best regards,
-            RADIOFIND team
-            """.formatted(resetLink));
+        This link is valid for %d minutes.
 
-    mailSender.send(message);
+        If you did not request a password reset,
+        you can safely ignore this email.
+        """.formatted(resetLink, PASSWORD_RESET_EXPIRATION_MINUTES);
+
+    sendEmail(email, "RADIOFIND - Password Reset", plainText, htmlContent);
+  }
+
+  private void sendEmail(String email, String subject, String plainText, String htmlContent) {
+    try {
+      var mimeMessage = mailSender.createMimeMessage();
+
+      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name());
+
+      helper.setTo(email);
+
+      helper.setSubject(subject);
+
+      helper.setText(plainText, htmlContent);
+
+      mailSender.send(mimeMessage);
+    } catch (MessagingException e) {
+      throw new IllegalStateException("Failed to create email message", e);
+    }
   }
 }
