@@ -68,6 +68,18 @@ spring:
       password: admin
 ```
 
+### Secrets
+
+Secrets are not stored in `application.yaml`. They are read from environment variables
+or from a local `.env` file in the project root (git-ignored):
+
+```Bash
+cp .env.example .env   # then fill in the values
+```
+
+`.env` is loaded as a `.properties` file (ISO-8859-1), so write non-Latin characters
+as `\uXXXX` escapes.
+
 ## ▶️ Project run
 
 1. Cloning a repo
