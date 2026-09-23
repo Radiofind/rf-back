@@ -2,21 +2,24 @@ spring:
   application:
     name: monolit
 
+  config:
+    import: optional:file:.env[.properties]
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: кфвшщ
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${SHOW_SQL:true}
 
   mail:
     host: smtp.gmail.com
     port: 587
-    username: alexanderhanziuk@gmail.com
-    password: qrcq ceug ruaj vjdo
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -28,8 +31,8 @@ server:
   port: 8080
 
 app:
-  frontend-url: http://localhost:4200
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
 jwt:
-  secret: jwt.secret=my-super-secret-key-that-is-at-least-32-bytes
+  secret: ${JWT_SECRET}
   expiration: 86400000
