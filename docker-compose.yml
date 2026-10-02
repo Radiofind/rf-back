@@ -1,0 +1,37 @@
+name: radiofind
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: radiofind
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # 5433 on the host, because 5432 is taken by the local Postgres
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d radiofind"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    image: radiofind-back:dev
+    env_file: .env
+    environment:
+      # Overrides the DB settings from .env so the backend talks to the db container
+      DB_URL: jdbc:postgresql://db:5432/radiofind
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
