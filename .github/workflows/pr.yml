@@ -3,6 +3,7 @@ name: Pull Request CI
 on:
   pull_request:
     branches:
+      - develop
       - main
   push:
     branches:
@@ -28,7 +29,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: "25"
           cache: maven
 
       - name: Build
@@ -68,7 +69,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: "25"
           cache: maven
 
       - name: Test
@@ -80,7 +81,7 @@ jobs:
           MAIL_USERNAME: ci@example.com
           MAIL_PASSWORD: unused
           JWT_SECRET: ci-only-jwt-secret-key-at-least-32-bytes-long
-          SHOW_SQL: 'false'
+          SHOW_SQL: "false"
 
       - name: Upload test reports
         if: always()
