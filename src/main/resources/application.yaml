@@ -33,6 +33,9 @@ server:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
+  storage:
+    avatar-path: ${AVATARS_PATH:./storage/avatars}
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
