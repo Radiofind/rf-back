@@ -25,4 +25,6 @@ public class UserProfileResponse {
   private String description;
 
   private LocalDateTime registeredAt;
+
+  private String avatarUrl;
 }

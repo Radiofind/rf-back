@@ -45,6 +45,9 @@ public class User {
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
+  @Column
+  private String avatarFileName;
+
   @Enumerated(EnumType.STRING)
   private SubscriptionType subscriptionType;
 
