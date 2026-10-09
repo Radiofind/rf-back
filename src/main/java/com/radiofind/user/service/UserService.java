@@ -111,7 +111,7 @@ public class UserService {
 
     if (!contentType.equals("image/jpeg")
         && !contentType.equals("image/png")
-        && !contentType.equals("image/webh")) {
+        && !contentType.equals("image/webp")) {
       throw new IllegalArgumentException("Only JPEG, PNG and WebP images are allowed");
     }
   }
