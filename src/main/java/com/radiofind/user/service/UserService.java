@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
+  private static final String AVATAR_URL = "/api/users/me/avatar";
+
   private final UserRepository userRepository;
   private final FileStorageService fileStorageService;
 
@@ -27,6 +29,7 @@ public class UserService {
         .name(user.getName())
         .surname(user.getSurname())
         .email(user.getEmail())
+        .avatarUrl(getAvatarUrl(user))
         .build();
   }
 
@@ -48,9 +51,7 @@ public class UserService {
             ? user.getArtistProfile().getDescription()
             : null)
         .registeredAt(user.getCreatedAt())
-        .avatarUrl(user.getAvatarFileName() != null
-            ? "/api/users/me/avatar"
-            : null)
+        .avatarUrl(getAvatarUrl(user))
         .build();
   }
 
@@ -72,7 +73,7 @@ public class UserService {
     }
 
     return AvatarResponse.builder()
-        .avatarUrl("/api/users/me/avatar")
+        .avatarUrl(AVATAR_URL)
         .build();
   }
 
@@ -90,6 +91,10 @@ public class UserService {
     user.setAvatarFileName(null);
 
     userRepository.save(user);
+  }
+
+  private String getAvatarUrl(User user) {
+    return user.getAvatarFileName() != null ? AVATAR_URL : null;
   }
 
   private void validateAvatar(MultipartFile file) {

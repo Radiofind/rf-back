@@ -13,4 +13,6 @@ public class CurrentUserResponse {
   private String surname;
 
   private String email;
+
+  private String avatarUrl;
 }
