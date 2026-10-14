@@ -94,7 +94,7 @@ public class UserService {
   }
 
   private String getAvatarUrl(User user) {
-    return user.getAvatarFileName() != null ? AVATAR_URL : null;
+    return fileStorageService.avatarExists(user.getAvatarFileName()) ? AVATAR_URL : null;
   }
 
   private void validateAvatar(MultipartFile file) {

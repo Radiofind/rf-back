@@ -15,7 +15,7 @@ public class FileStorageService {
 
   private final Path avatarsPath;
 
-  public FileStorageService(@Value("${app.storage.avatars-path") String avatarsPath) {
+  public FileStorageService(@Value("${app.storage.avatar-path}") String avatarsPath) {
     this.avatarsPath = Path.of(avatarsPath);
 
     try {
@@ -71,6 +71,14 @@ public class FileStorageService {
     } catch (IOException e) {
       throw new IllegalStateException("Unable to delete avatar file", e);
     }
+  }
+
+  public boolean avatarExists(String fileName) {
+    if (fileName == null || fileName.isBlank()) {
+      return false;
+    }
+
+    return Files.isRegularFile(getAvatarPath(fileName));
   }
 
   public Path getAvatarPath(String fileName) {
