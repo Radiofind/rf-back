@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
@@ -72,6 +73,12 @@ public class UserController {
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @RequestPart("file") MultipartFile file) {
     return userService.uploadAvatar(userDetails, file);
+  }
+
+  @PutMapping("/profile")
+  public UpdateUserProfileResponse updateUserProfile(@AuthenticationPrincipal CustomUserDetails userDetails,
+      @Valid @RequestBody UpdateUserProfileRequest request) {
+    return userService.updateUserProfile(userDetails, request);
   }
 
   @DeleteMapping("/avatar")

@@ -11,10 +11,13 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class UserServiceTest {
 
@@ -23,22 +26,29 @@ class UserServiceTest {
   @TempDir
   Path avatarsPath;
 
+  private UserRepository userRepository;
+
   private UserService userService;
 
   @BeforeEach
   void setUp() {
+    userRepository = mock(UserRepository.class);
     userService = new UserService(
-        mock(UserRepository.class),
+        userRepository,
         new FileStorageService(avatarsPath.toString()));
   }
 
   private CustomUserDetails userWithAvatar(String avatarFileName) {
-    return new CustomUserDetails(User.builder()
+    User user = User.builder()
         .name("Ada")
         .surname("Lovelace")
         .email("ada@example.com")
         .avatarFileName(avatarFileName)
-        .build());
+        .build();
+
+    when(userRepository.findById(any())).thenReturn(Optional.of(user));
+
+    return new CustomUserDetails(user);
   }
 
   @Test
