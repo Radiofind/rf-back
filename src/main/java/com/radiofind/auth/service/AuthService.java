@@ -41,7 +41,7 @@ public class AuthService {
   private final EmailService emailService;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-  private final SecureRandom secureRandom = new SecureRandom();
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   @Value("${app.frontend-url}")
   private String frontendUrl;
@@ -271,18 +271,18 @@ public class AuthService {
     String tokenHash = hashToken(request.getToken());
 
     boolean valid = passwordResetTokenRepository
-      .findByTokenHash(tokenHash)
-      .map(resetToken -> !resetToken.isUsed() && resetToken.getExpiresAt().isAfter(LocalDateTime.now()))
-      .orElse(false);
+        .findByTokenHash(tokenHash)
+        .map(resetToken -> !resetToken.isUsed() && resetToken.getExpiresAt().isAfter(LocalDateTime.now()))
+        .orElse(false);
 
     return ValidatePasswordResetTokenResponse.builder()
-      .valid(valid)
-      .build();
+        .valid(valid)
+        .build();
   }
 
   private String generateCode() {
 
-    int code = secureRandom.nextInt(1_000_000);
+    int code = SECURE_RANDOM.nextInt(1_000_000);
 
     return String.format("%0" + CODE_LENGTH + "d", code);
   }
@@ -291,7 +291,7 @@ public class AuthService {
 
     byte[] randomBytes = new byte[32];
 
-    secureRandom.nextBytes(randomBytes);
+    SECURE_RANDOM.nextBytes(randomBytes);
 
     return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
   }
