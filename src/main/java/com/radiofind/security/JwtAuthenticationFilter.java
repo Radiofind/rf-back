@@ -6,6 +6,7 @@ import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -42,6 +43,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
       var userDetails = userDetailsService.loadUserByUsername(userEmail);
+
+      try {
+
+        userDetails = userDetailsService.loadUserByUsername(userEmail);
+
+      } catch (UsernameNotFoundException e) {
+
+        SecurityContextHolder.clearContext();
+
+        filterChain.doFilter(request, response);
+
+        return;
+      }
 
       if (jwtService.isTokenValid(token, userDetails)) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,

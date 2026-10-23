@@ -25,6 +25,9 @@ public class ArtistProfile {
 
   private String artistName;
 
+  @Column(name = "short_description", length = 500)
+  private String shortDescription;
+
   @Column(length = 3000)
   private String description;
 
