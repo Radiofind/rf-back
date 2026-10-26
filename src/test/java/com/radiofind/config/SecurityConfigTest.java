@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(
     controllers = {AuthController.class, UserController.class, SettingsController.class},
-    properties = "app.frontend-url=https://app.radiofind.test")
+    properties = "app.cors.allowed-origins=https://app.radiofind.test,http://localhost:4200")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class SecurityConfigTest {
 
@@ -125,6 +125,16 @@ class SecurityConfigTest {
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://app.radiofind.test"))
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, containsString("POST")));
+  }
+
+  @Test
+  void corsAllowsEveryConfiguredOrigin() throws Exception {
+    mockMvc.perform(post("/api/auth/forgot-password")
+            .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"ada@example.com\"}"))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"));
   }
 
   @Test
