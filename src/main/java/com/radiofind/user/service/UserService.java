@@ -3,7 +3,9 @@ package com.radiofind.user.service;
 import com.radiofind.artist.dto.ArtistSocialLinksDto;
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.entity.ArtistSocialLinks;
+import com.radiofind.artist.entity.ArtistType;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.storage.service.AvatarImageType;
 import com.radiofind.storage.service.FileStorageService;
 import com.radiofind.user.dto.AvatarResponse;
 import com.radiofind.user.dto.CurrentUserResponse;
@@ -94,7 +96,7 @@ public class UserService {
 
     ArtistProfile artistProfile = user.getArtistProfile();
 
-    if (artistProfile == null && hasArtistData(request)) {
+    if (artistProfile == null) {
 
       artistProfile = ArtistProfile.builder()
           .user(user)
@@ -103,30 +105,29 @@ public class UserService {
       user.setArtistProfile(artistProfile);
     }
 
-    if (artistProfile != null) {
+    artistProfile.setUser(user);
 
-      artistProfile.setUser(user);
+    artistProfile.setType(resolveArtistType(
+        request.getArtistType(),
+        artistProfile.getType()));
 
-      artistProfile.setType(request.getArtistType());
+    artistProfile.setArtistName(
+        normalizeNullableText(request.getArtistName()));
 
-      artistProfile.setArtistName(
-          normalizeNullableText(request.getArtistName()));
+    artistProfile.setShortDescription(
+        normalizeNullableText(request.getShortDescription()));
 
-      artistProfile.setShortDescription(
-          normalizeNullableText(request.getShortDescription()));
+    artistProfile.setDescription(
+        normalizeNullableText(request.getDescription()));
 
-      artistProfile.setDescription(
-          normalizeNullableText(request.getDescription()));
+    artistProfile.setMainGenres(
+        normalizeGenres(request.getMainGenres()));
 
-      artistProfile.setMainGenres(
-          normalizeGenres(request.getMainGenres()));
+    artistProfile.setAdditionalGenres(
+        normalizeGenres(request.getAdditionalGenres()));
 
-      artistProfile.setAdditionalGenres(
-          normalizeGenres(request.getAdditionalGenres()));
-
-      artistProfile.setSocialLinks(
-          toSocialLinksEntity(request.getSocialLinks()));
-    }
+    artistProfile.setSocialLinks(
+        toSocialLinksEntity(request.getSocialLinks()));
 
     userRepository.save(user);
 
@@ -153,7 +154,13 @@ public class UserService {
 
     user.setAvatarFileName(newAvatarFileName);
 
-    userRepository.save(user);
+    try {
+      userRepository.save(user);
+    } catch (RuntimeException e) {
+      user.setAvatarFileName(oldAvatarFileName);
+      fileStorageService.deleteAvatar(newAvatarFileName);
+      throw e;
+    }
 
     if (oldAvatarFileName != null) {
       fileStorageService.deleteAvatar(oldAvatarFileName);
@@ -205,9 +212,9 @@ public class UserService {
         .recoveryEmail(user.getRecoveryEmail())
         .dateOfBirth(user.getDateOfBirth())
         .artistType(
-            artistProfile != null
+            artistProfile != null && artistProfile.getType() != null
                 ? artistProfile.getType()
-                : null)
+                : ArtistType.DEFAULT)
         .artistName(
             artistProfile != null
                 ? artistProfile.getArtistName()
@@ -246,41 +253,17 @@ public class UserService {
         : null;
   }
 
-  private boolean hasArtistData(
-      UpdateUserProfileRequest request) {
+  private ArtistType resolveArtistType(
+      ArtistType requested,
+      ArtistType current) {
 
-    return request.getArtistType() != null
-        || hasText(request.getArtistName())
-        || hasText(request.getShortDescription())
-        || hasText(request.getDescription())
-        || hasGenres(request.getMainGenres())
-        || hasGenres(request.getAdditionalGenres())
-        || hasSocialLinks(request.getSocialLinks());
-  }
-
-  private boolean hasGenres(List<String> genres) {
-
-    return genres != null
-        && genres.stream().anyMatch(this::hasText);
-  }
-
-  private boolean hasSocialLinks(
-      ArtistSocialLinksDto socialLinks) {
-
-    if (socialLinks == null) {
-      return false;
+    if (requested != null) {
+      return requested;
     }
 
-    return hasText(socialLinks.getTelegram())
-        || hasText(socialLinks.getInstagram())
-        || hasText(socialLinks.getYoutube())
-        || hasText(socialLinks.getFacebook())
-        || hasText(socialLinks.getSpotify())
-        || hasText(socialLinks.getAppleMusic())
-        || hasText(socialLinks.getSoundcloud())
-        || hasText(socialLinks.getBandcamp())
-        || hasText(socialLinks.getIcloud())
-        || hasText(socialLinks.getTiktok());
+    return current != null
+        ? current
+        : ArtistType.DEFAULT;
   }
 
   private ArtistSocialLinks toSocialLinksEntity(
@@ -446,11 +429,6 @@ public class UserService {
     return value.trim();
   }
 
-  private boolean hasText(String value) {
-
-    return value != null && !value.isBlank();
-  }
-
   private void validateAvatar(MultipartFile file) {
 
     if (file == null || file.isEmpty()) {
@@ -477,6 +455,12 @@ public class UserService {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
           "Only JPEG, PNG and WebP images are allowed");
+    }
+
+    if (AvatarImageType.detect(file).isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Avatar file content is not a supported image");
     }
   }
 }

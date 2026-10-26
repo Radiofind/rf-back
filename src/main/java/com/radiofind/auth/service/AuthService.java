@@ -8,15 +8,20 @@ import com.radiofind.security.JwtService;
 import com.radiofind.user.entity.*;
 import com.radiofind.user.repository.UserRepository;
 import com.radiofind.artist.entity.ArtistProfile;
+import com.radiofind.artist.entity.ArtistType;
 import com.radiofind.artist.repository.ArtistProfileRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import lombok.RequiredArgsConstructor;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -31,6 +36,7 @@ public class AuthService {
   private static final int CODE_EXPIRATION_MINUTES = 5;
   private static final int MAX_ATTEMPTS = 5;
   private static final int RESEND_COOLDOWN_SECONDS = 45;
+  private static final int MAX_RESENDS = 3;
   private static final int PASSWORD_RESET_EXPIRATION_MINUTES = 15;
 
   private final UserRepository userRepository;
@@ -48,15 +54,21 @@ public class AuthService {
 
   public AuthResponse register(RegisterRequest request) {
 
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw new RuntimeException("Email already exists");
+    String email = normalizeEmail(request.getEmail());
+
+    if (email == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
+    }
+
+    if (userRepository.existsByEmailIgnoreCase(email)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
     }
 
     User user = User.builder()
         .name(request.getName())
         .surname(request.getSurname())
-        .email(request.getEmail())
-        .recoveryEmail(request.getRecoveryEmail())
+        .email(email)
+        .recoveryEmail(normalizeEmail(request.getRecoveryEmail()))
         .dateOfBirth(request.getDateOfBirth())
         .password(passwordEncoder.encode(request.getPassword()))
         .role(Role.USER)
@@ -67,21 +79,21 @@ public class AuthService {
 
     userRepository.save(user);
 
-    if (request.getArtistInformation() != null) {
+    ArtistInformationDto artistInformation = Optional.ofNullable(request.getArtistInformation())
+        .orElseGet(ArtistInformationDto::new);
 
-      ArtistProfile artistProfile = ArtistProfile.builder()
-          .type(request.getArtistInformation().getTypeOfArtist())
-          .artistName(request.getArtistInformation().getArtistName())
-          .description(request.getArtistInformation().getDescription())
-          .user(user)
-          .build();
+    ArtistProfile artistProfile = ArtistProfile.builder()
+        .type(Optional.ofNullable(artistInformation.getTypeOfArtist()).orElse(ArtistType.DEFAULT))
+        .artistName(artistInformation.getArtistName())
+        .description(artistInformation.getDescription())
+        .user(user)
+        .build();
 
-      artistProfileRepository.save(artistProfile);
+    artistProfileRepository.save(artistProfile);
 
-      user.setArtistProfile(artistProfile);
+    user.setArtistProfile(artistProfile);
 
-      userRepository.save(user);
-    }
+    userRepository.save(user);
 
     String token = jwtService.generateToken(user);
 
@@ -93,12 +105,12 @@ public class AuthService {
 
   public AuthResponse login(LoginRequest request) {
 
-    User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> new RuntimeException("User not found"));
-
-    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-      throw new RuntimeException("Invalid email or password");
-    }
+    User user = findUserByEmail(request.getEmail())
+        .filter(found -> request.getPassword() != null
+            && passwordEncoder.matches(request.getPassword(), found.getPassword()))
+        .orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.UNAUTHORIZED,
+            "Invalid email or password"));
 
     String code = generateCode();
 
@@ -114,6 +126,7 @@ public class AuthService {
         .lastSentAt(LocalDateTime.now())
         .used(false)
         .attempts(0)
+        .resendCount(0)
         .build();
 
     twoFactorChallengeRepository.save(challenge);
@@ -126,22 +139,21 @@ public class AuthService {
         .build();
   }
 
+  @Transactional(noRollbackFor = ResponseStatusException.class)
   public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request) {
 
-    TwoFactorChallenge challenge = twoFactorChallengeRepository
-        .findByChallengeId(request.getChallengeId())
-        .orElseThrow(() -> new RuntimeException("Invalid verification request"));
+    TwoFactorChallenge challenge = findChallengeForUpdate(request.getChallengeId());
 
     if (challenge.isUsed()) {
-      throw new RuntimeException("Verification code has already been used");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has already been used");
     }
 
     if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
-      throw new RuntimeException("Verification code has expired");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has expired");
     }
 
     if (challenge.getAttempts() >= MAX_ATTEMPTS) {
-      throw new RuntimeException("Too many attempts");
+      throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many attempts");
     }
 
     challenge.setAttempts(challenge.getAttempts() + 1);
@@ -151,7 +163,7 @@ public class AuthService {
         challenge.getCodeHash())) {
       twoFactorChallengeRepository.save(challenge);
 
-      throw new RuntimeException("Invalid verification code");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid verification code");
     }
 
     challenge.setUsed(true);
@@ -166,20 +178,23 @@ public class AuthService {
         .build();
   }
 
+  @Transactional
   public AuthResponse resendTwoFactor(ResendTwoFactorRequest request) {
 
-    TwoFactorChallenge challenge = twoFactorChallengeRepository
-        .findByChallengeId(request.getChallengeId())
-        .orElseThrow(() -> new RuntimeException("Invalid verification request"));
+    TwoFactorChallenge challenge = findChallengeForUpdate(request.getChallengeId());
 
     if (challenge.isUsed()) {
-      throw new RuntimeException("Verification code has already been used");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has already been used");
     }
 
     LocalDateTime now = LocalDateTime.now();
 
     if (challenge.getExpiresAt().isBefore(now)) {
-      throw new RuntimeException("Verification request has expired");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification request has expired");
+    }
+
+    if (challenge.getResendCount() >= MAX_RESENDS) {
+      throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many code requests, please log in again");
     }
 
     LocalDateTime nextAllowedSendTime = challenge
@@ -187,7 +202,7 @@ public class AuthService {
         .plusSeconds(RESEND_COOLDOWN_SECONDS);
 
     if (now.isBefore(nextAllowedSendTime)) {
-      throw new RuntimeException("Please wait before requesting a new code");
+      throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Please wait before requesting a new code");
     }
 
     String code = generateCode();
@@ -196,7 +211,11 @@ public class AuthService {
 
     challenge.setAttempts(0);
 
+    challenge.setResendCount(challenge.getResendCount() + 1);
+
     challenge.setLastSentAt(now);
+
+    challenge.setExpiresAt(now.plusMinutes(CODE_EXPIRATION_MINUTES));
 
     twoFactorChallengeRepository.save(challenge);
 
@@ -212,7 +231,7 @@ public class AuthService {
   @Transactional
   public void forgotPassword(ForgotPasswordRequest request) {
 
-    userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+    findUserByEmail(request.getEmail()).ifPresent(user -> {
 
       passwordResetTokenRepository.deleteByUserAndUsedFalse(user);
 
@@ -243,14 +262,14 @@ public class AuthService {
 
     PasswordResetToken resetToken = passwordResetTokenRepository
         .findByTokenHash(tokenHash)
-        .orElseThrow(() -> new RuntimeException("Invalid password reset token"));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid password reset token"));
 
     if (resetToken.isUsed()) {
-      throw new RuntimeException("Password reset token has already been used");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password reset token has already been used");
     }
 
     if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-      throw new RuntimeException("Password reset token has expired");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password reset token has expired");
     }
 
     User user = resetToken.getUser();
@@ -278,6 +297,28 @@ public class AuthService {
     return ValidatePasswordResetTokenResponse.builder()
         .valid(valid)
         .build();
+  }
+
+  private TwoFactorChallenge findChallengeForUpdate(String challengeId) {
+
+    return twoFactorChallengeRepository
+        .findWithLockByChallengeId(challengeId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification request"));
+  }
+
+  private Optional<User> findUserByEmail(String email) {
+
+    return Optional.ofNullable(normalizeEmail(email))
+        .flatMap(userRepository::findByEmailIgnoreCase);
+  }
+
+  private String normalizeEmail(String email) {
+
+    if (email == null || email.isBlank()) {
+      return null;
+    }
+
+    return email.trim().toLowerCase(Locale.ROOT);
   }
 
   private String generateCode() {
