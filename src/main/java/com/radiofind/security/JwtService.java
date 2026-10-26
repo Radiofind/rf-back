@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.security.Key;
 
@@ -20,7 +21,7 @@ public class JwtService {
   public JwtService(
       @Value("${jwt.secret}") String secret,
       @Value("${jwt.expiration}") long expiration) {
-    this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     this.expiration = expiration;
   }
 
@@ -39,12 +40,13 @@ public class JwtService {
   }
 
   public boolean isTokenValid(String token, UserDetails userDetails) {
-    final String username = extractUsername(token);
-    return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
-  }
-
-  private boolean isTokenExpired(String token) {
-    return extractAllClaims(token).getExpiration().before(new Date());
+    try {
+      Claims claims = extractAllClaims(token);
+      return claims.getSubject().equals(userDetails.getUsername())
+          && claims.getExpiration().after(new Date());
+    } catch (JwtException | IllegalArgumentException e) {
+      return false;
+    }
   }
 
   private Claims extractAllClaims(String token) {

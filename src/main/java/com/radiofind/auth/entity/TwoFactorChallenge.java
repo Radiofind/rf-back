@@ -3,6 +3,7 @@ package com.radiofind.auth.entity;
 import com.radiofind.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -40,4 +41,8 @@ public class TwoFactorChallenge {
 
   @Column(nullable = false)
   private int attempts;
+
+  @Column(nullable = false)
+  @ColumnDefault("0")
+  private int resendCount;
 }
