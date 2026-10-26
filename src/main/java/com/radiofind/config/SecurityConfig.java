@@ -20,8 +20,8 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtFilter;
 
-  @Value("${app.frontend-url}")
-  private String frontendUrl;
+  @Value("${app.cors.allowed-origins}")
+  private List<String> allowedOrigins;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,7 +45,7 @@ public class SecurityConfig {
 
     CorsConfiguration config = new CorsConfiguration();
 
-    config.setAllowedOrigins(List.of(frontendUrl));
+    config.setAllowedOrigins(allowedOrigins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
     config.setAllowCredentials(true);
