@@ -30,15 +30,10 @@ public class FileStorageService {
       throw new IllegalArgumentException("Avatar file is empty");
     }
 
-    String originalFileName = file.getOriginalFilename();
+    AvatarImageType imageType = AvatarImageType.detect(file)
+        .orElseThrow(() -> new IllegalArgumentException("Avatar file is not a supported image"));
 
-    if (originalFileName == null || originalFileName.isBlank()) {
-      throw new IllegalArgumentException("Avatar file name is missing");
-    }
-
-    String extension = getFileExtension(originalFileName);
-
-    String fileName = UUID.randomUUID() + extension;
+    String fileName = UUID.randomUUID() + imageType.getExtension();
 
     Path targetPath = avatarsPath.resolve(fileName).normalize();
 
@@ -89,15 +84,5 @@ public class FileStorageService {
     }
 
     return filePath;
-  }
-
-  private String getFileExtension(String originalFileName) {
-    int dotIndex = originalFileName.lastIndexOf('.');
-
-    if (dotIndex < 0) {
-      throw new IllegalArgumentException("Avatar file must have an extension");
-    }
-
-    return originalFileName.substring(dotIndex).toLowerCase();
   }
 }

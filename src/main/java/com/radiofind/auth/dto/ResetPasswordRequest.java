@@ -11,7 +11,7 @@ public class ResetPasswordRequest {
   private String token;
 
   @NotBlank
-  @Size(min = 8, message = "Password must contain at least 8 characters")
+  @Size(min = 8, max = 72, message = "Password must contain between 8 and 72 characters")
   private String newPassword;
 
 }
