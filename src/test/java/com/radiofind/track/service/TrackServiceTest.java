@@ -17,8 +17,6 @@ import com.radiofind.user.entity.User;
 import com.radiofind.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,8 +79,7 @@ class TrackServiceTest {
     owner.setArtistProfile(ArtistProfile.builder().artistName(" The Engines ").build());
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle(" Midnight Dreams ");
-    request.setGenre("BLUES_ROCK");
-    request.setSubgenre("GRUNGE");
+    request.setGenres(List.of(" BLUES_ROCK ", "GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     when(genreCatalog.isGenre("BLUES_ROCK")).thenReturn(true);
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
@@ -96,7 +94,7 @@ class TrackServiceTest {
     Track track = event.getValue().track();
     assertEquals(owner, track.getOwner());
     assertEquals("Midnight Dreams", track.getTitle());
-    assertEquals("GRUNGE", track.getSubgenre());
+    assertEquals(List.of("BLUES_ROCK", "GRUNGE"), track.getGenres());
     assertEquals(TrackStatus.PENDING_REVIEW, track.getStatus());
     assertEquals("a.mp3", track.getAudioFileName());
     assertEquals("The Engines", response.getArtistName());
@@ -107,7 +105,7 @@ class TrackServiceTest {
     User owner = User.builder().id(7L).name("Ada").surname("Lovelace").build();
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("GRUNGE");
+    request.setGenres(List.of("GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
     when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
@@ -123,7 +121,7 @@ class TrackServiceTest {
     User owner = User.builder().id(7L).name("Ada").surname("Lovelace").build();
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("GRUNGE");
+    request.setGenres(List.of("GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     MockMultipartFile cover = new MockMultipartFile("cover", "cover.jpg", "image/jpeg", TestImages.PNG);
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
@@ -144,7 +142,7 @@ class TrackServiceTest {
   void rejectsUnknownGenreBeforeStoringAnyFile() {
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("POLKA_STEP");
+    request.setGenres(List.of("POLKA_STEP"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
 
     ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -154,18 +152,13 @@ class TrackServiceTest {
     verifyNoInteractions(trackFileStorageService);
   }
 
-  @ParameterizedTest
-  @CsvSource({
-      "BLUES_ROCK, ROCK",
-      "BLUES_ROCK, BLUES_ROCK"
-  })
-  void rejectsSubgenreThatIsAGroupOrRepeatsTheGenre(String genre, String subgenre) {
+  @Test
+  void rejectsTheSameGenreTwice() {
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre(genre);
-    request.setSubgenre(subgenre);
+    request.setGenres(List.of("GRUNGE", "GRUNGE "));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
-    when(genreCatalog.isGenre("BLUES_ROCK")).thenReturn(true);
+    when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
 
     ResponseStatusException error = assertThrows(ResponseStatusException.class,
         () -> trackService.upload(new CustomUserDetails(User.builder().id(7L).build()), request, audio, null));
@@ -178,7 +171,7 @@ class TrackServiceTest {
   void rejectsAudioWhoseContentIsNotMp3WavOrFlac() {
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("GRUNGE");
+    request.setGenres(List.of("GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", TestImages.HTML);
 
     ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -192,7 +185,7 @@ class TrackServiceTest {
   void rejectsCoverWhoseContentIsNotAnImage() {
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("GRUNGE");
+    request.setGenres(List.of("GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     MockMultipartFile cover = new MockMultipartFile("cover", "cover.png", "image/png", TestImages.HTML);
 
@@ -208,7 +201,7 @@ class TrackServiceTest {
     User owner = User.builder().id(7L).name("Ada").surname("Lovelace").build();
     UploadTrackRequest request = new UploadTrackRequest();
     request.setTitle("Midnight Dreams");
-    request.setGenre("GRUNGE");
+    request.setGenres(List.of("GRUNGE"));
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     MockMultipartFile cover = new MockMultipartFile("cover", "cover.png", "image/png", TestImages.PNG);
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
