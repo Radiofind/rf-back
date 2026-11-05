@@ -1,8 +1,11 @@
 package com.radiofind.notification.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -10,6 +13,7 @@ import jakarta.mail.MessagingException;
 
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -20,6 +24,7 @@ public class EmailService {
   private final JavaMailSender mailSender;
   private final SpringTemplateEngine templateEngine;
 
+  @Async
   public void sendTwoFactorCode(String email, String code) {
     Context context = new Context();
 
@@ -47,6 +52,7 @@ public class EmailService {
     sendEmail(email, "RADIOFIND - Two Factor Authentication Code", plainText, htmlContent);
   }
 
+  @Async
   public void sendPasswordResetLink(String email, String resetLink) {
     Context context = new Context();
 
@@ -77,9 +83,9 @@ public class EmailService {
   }
 
   private void sendEmail(String email, String subject, String plainText, String htmlContent) {
-    try {
-      var mimeMessage = mailSender.createMimeMessage();
+    var mimeMessage = mailSender.createMimeMessage();
 
+    try {
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name());
 
       helper.setTo(email);
@@ -89,8 +95,14 @@ public class EmailService {
       helper.setText(plainText, htmlContent);
 
       mailSender.send(mimeMessage);
-    } catch (MessagingException e) {
-      throw new IllegalStateException("Failed to create email message", e);
+    } catch (MessagingException | MailException e) {
+      log.atError()
+          .setMessage("email send failed")
+          .addKeyValue("subject", subject)
+          .addKeyValue("cause", e.getMessage())
+          .addKeyValue("effect", "email dropped")
+          .setCause(e)
+          .log();
     }
   }
 }
