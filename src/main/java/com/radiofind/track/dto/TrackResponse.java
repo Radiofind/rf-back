@@ -5,6 +5,7 @@ import com.radiofind.track.entity.TrackStatus;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,9 +19,7 @@ public class TrackResponse {
 
   private String artistName;
 
-  private String genre;
-
-  private String subgenre;
+  private List<String> genres;
 
   private String description;
 

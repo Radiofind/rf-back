@@ -5,6 +5,8 @@ import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class TrackMapper {
 
@@ -15,8 +17,7 @@ public class TrackMapper {
         .id(track.getId())
         .title(track.getTitle())
         .artistName(track.getArtistName())
-        .genre(track.getGenre())
-        .subgenre(track.getSubgenre())
+        .genres(List.copyOf(track.getGenres()))
         .description(track.getDescription())
         .status(track.getStatus())
         .audioFormat(track.getAudioFormat())
