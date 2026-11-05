@@ -1,0 +1,1336 @@
+[
+  {
+    "code": "ROCK",
+    "children": [
+      {
+        "code": "CLASSIC_ROCK"
+      },
+      {
+        "code": "HARD_ROCK"
+      },
+      {
+        "code": "BLUES_ROCK"
+      },
+      {
+        "code": "PSYCHEDELIC_ROCK"
+      },
+      {
+        "code": "PROGRESSIVE_ROCK"
+      },
+      {
+        "code": "ART_ROCK"
+      },
+      {
+        "code": "GLAM_ROCK"
+      },
+      {
+        "code": "SOFT_ROCK_AOR"
+      },
+      {
+        "code": "SOUTHERN_ROCK"
+      },
+      {
+        "code": "GARAGE_ROCK"
+      },
+      {
+        "code": "SURF_ROCK"
+      },
+      {
+        "code": "KRAUTROCK"
+      },
+      {
+        "code": "SPACE_ROCK"
+      },
+      {
+        "code": "NOISE_ROCK"
+      },
+      {
+        "code": "MATH_ROCK"
+      },
+      {
+        "code": "POST_ROCK"
+      },
+      {
+        "code": "SHOEGAZE"
+      },
+      {
+        "code": "ALTERNATIVE_ROCK"
+      },
+      {
+        "code": "INDIE_ROCK"
+      },
+      {
+        "code": "GRUNGE"
+      },
+      {
+        "code": "NEW_WAVE"
+      },
+      {
+        "code": "GOTHIC_ROCK"
+      },
+      {
+        "code": "FOLK_ROCK"
+      },
+      {
+        "code": "COUNTRY_ROCK"
+      },
+      {
+        "code": "POP_ROCK"
+      },
+      {
+        "code": "STONER_ROCK"
+      },
+      {
+        "code": "RAP_ROCK"
+      }
+    ]
+  },
+  {
+    "code": "METAL",
+    "children": [
+      {
+        "code": "HEAVY_METAL"
+      },
+      {
+        "code": "THRASH_METAL"
+      },
+      {
+        "code": "DEATH_METAL"
+      },
+      {
+        "code": "BLACK_METAL"
+      },
+      {
+        "code": "DOOM_METAL"
+      },
+      {
+        "code": "SLUDGE_METAL"
+      },
+      {
+        "code": "DRONE_METAL"
+      },
+      {
+        "code": "POWER_METAL"
+      },
+      {
+        "code": "SPEED_METAL"
+      },
+      {
+        "code": "PROGRESSIVE_METAL"
+      },
+      {
+        "code": "SYMPHONIC_METAL"
+      },
+      {
+        "code": "FOLK_METAL"
+      },
+      {
+        "code": "VIKING_METAL"
+      },
+      {
+        "code": "GOTHIC_METAL"
+      },
+      {
+        "code": "INDUSTRIAL_METAL"
+      },
+      {
+        "code": "NU_METAL"
+      },
+      {
+        "code": "ALTERNATIVE_METAL"
+      },
+      {
+        "code": "GROOVE_METAL"
+      },
+      {
+        "code": "METALCORE"
+      },
+      {
+        "code": "DEATHCORE"
+      },
+      {
+        "code": "GRINDCORE"
+      },
+      {
+        "code": "GLAM_METAL"
+      },
+      {
+        "code": "POST_METAL"
+      },
+      {
+        "code": "MELODIC_DEATH_METAL"
+      },
+      {
+        "code": "TECHNICAL_DEATH_METAL"
+      }
+    ]
+  },
+  {
+    "code": "PUNK",
+    "children": [
+      {
+        "code": "PUNK_ROCK"
+      },
+      {
+        "code": "HARDCORE_PUNK"
+      },
+      {
+        "code": "POST_PUNK"
+      },
+      {
+        "code": "POP_PUNK"
+      },
+      {
+        "code": "EMO"
+      },
+      {
+        "code": "POST_HARDCORE"
+      },
+      {
+        "code": "STREET_PUNK"
+      },
+      {
+        "code": "ANARCHO_PUNK"
+      },
+      {
+        "code": "CRUST_PUNK"
+      },
+      {
+        "code": "SKATE_PUNK"
+      },
+      {
+        "code": "GARAGE_PUNK"
+      },
+      {
+        "code": "HORROR_PUNK"
+      },
+      {
+        "code": "SKA_PUNK"
+      },
+      {
+        "code": "FOLK_PUNK"
+      },
+      {
+        "code": "CELTIC_PUNK"
+      }
+    ]
+  },
+  {
+    "code": "ELECTRONIC",
+    "children": [
+      {
+        "code": "HOUSE",
+        "children": [
+          {
+            "code": "HOUSE"
+          },
+          {
+            "code": "DEEP_HOUSE"
+          },
+          {
+            "code": "TECH_HOUSE"
+          },
+          {
+            "code": "ACID_HOUSE"
+          },
+          {
+            "code": "PROGRESSIVE_HOUSE"
+          },
+          {
+            "code": "ELECTRO_HOUSE"
+          },
+          {
+            "code": "BIG_ROOM"
+          },
+          {
+            "code": "FUTURE_HOUSE"
+          },
+          {
+            "code": "TROPICAL_HOUSE"
+          },
+          {
+            "code": "NU_DISCO"
+          }
+        ]
+      },
+      {
+        "code": "TECHNO",
+        "children": [
+          {
+            "code": "TECHNO"
+          },
+          {
+            "code": "MINIMAL_TECHNO"
+          },
+          {
+            "code": "INDUSTRIAL_TECHNO"
+          },
+          {
+            "code": "ACID_TECHNO"
+          },
+          {
+            "code": "DETROIT_TECHNO"
+          },
+          {
+            "code": "DUB_TECHNO"
+          }
+        ]
+      },
+      {
+        "code": "TRANCE",
+        "children": [
+          {
+            "code": "TRANCE"
+          },
+          {
+            "code": "UPLIFTING_TRANCE"
+          },
+          {
+            "code": "PSYTRANCE"
+          },
+          {
+            "code": "GOA_TRANCE"
+          },
+          {
+            "code": "PROGRESSIVE_TRANCE"
+          },
+          {
+            "code": "HARD_TRANCE"
+          }
+        ]
+      },
+      {
+        "code": "DRUM_AND_BASS",
+        "children": [
+          {
+            "code": "DRUM_AND_BASS"
+          },
+          {
+            "code": "LIQUID_FUNK"
+          },
+          {
+            "code": "NEUROFUNK"
+          },
+          {
+            "code": "JUMP_UP"
+          },
+          {
+            "code": "JUNGLE"
+          },
+          {
+            "code": "DANCEFLOOR_DNB"
+          }
+        ]
+      },
+      {
+        "code": "DUBSTEP",
+        "children": [
+          {
+            "code": "DUBSTEP"
+          },
+          {
+            "code": "BROSTEP"
+          },
+          {
+            "code": "RIDDIM"
+          },
+          {
+            "code": "MELODIC_DUBSTEP"
+          },
+          {
+            "code": "POST_DUBSTEP"
+          }
+        ]
+      },
+      {
+        "code": "UK_GARAGE",
+        "children": [
+          {
+            "code": "UK_GARAGE"
+          },
+          {
+            "code": "TWO_STEP"
+          },
+          {
+            "code": "FUTURE_GARAGE"
+          },
+          {
+            "code": "BASSLINE"
+          },
+          {
+            "code": "SPEED_GARAGE"
+          }
+        ]
+      },
+      {
+        "code": "GRIME"
+      },
+      {
+        "code": "TRAP_EDM"
+      },
+      {
+        "code": "FUTURE_BASS"
+      },
+      {
+        "code": "ELECTRO"
+      },
+      {
+        "code": "ELECTROCLASH"
+      },
+      {
+        "code": "SYNTHWAVE"
+      },
+      {
+        "code": "VAPORWAVE"
+      },
+      {
+        "code": "CHIPTUNE"
+      },
+      {
+        "code": "BIG_BEAT"
+      },
+      {
+        "code": "BREAKBEAT"
+      },
+      {
+        "code": "HARDCORE_TECHNO",
+        "children": [
+          {
+            "code": "HARDCORE_TECHNO"
+          },
+          {
+            "code": "HAPPY_HARDCORE"
+          },
+          {
+            "code": "UK_HARDCORE"
+          }
+        ]
+      },
+      {
+        "code": "HARDSTYLE"
+      },
+      {
+        "code": "INDUSTRIAL",
+        "children": [
+          {
+            "code": "INDUSTRIAL"
+          },
+          {
+            "code": "EBM"
+          },
+          {
+            "code": "AGGROTECH"
+          },
+          {
+            "code": "ELECTRO_INDUSTRIAL"
+          },
+          {
+            "code": "INDUSTRIAL_CROSSOVERS"
+          }
+        ]
+      },
+      {
+        "code": "IDM",
+        "children": [
+          {
+            "code": "IDM"
+          },
+          {
+            "code": "GLITCH"
+          },
+          {
+            "code": "DECONSTRUCTED_CLUB"
+          },
+          {
+            "code": "FOOTWORK_JUKE_CROSSOVERS"
+          }
+        ]
+      },
+      {
+        "code": "DOWNTEMPO",
+        "children": [
+          {
+            "code": "DOWNTEMPO"
+          },
+          {
+            "code": "CHILLOUT"
+          },
+          {
+            "code": "LOUNGE_ELECTRONICA"
+          }
+        ]
+      },
+      {
+        "code": "PSYBIENT"
+      },
+      {
+        "code": "UK_BASS",
+        "children": [
+          {
+            "code": "UK_BASS"
+          },
+          {
+            "code": "UK_FUNKY"
+          },
+          {
+            "code": "JERSEY_CLUB"
+          },
+          {
+            "code": "DECONSTRUCTED_CLUB"
+          }
+        ]
+      },
+      {
+        "code": "HARDBASS"
+      }
+    ]
+  },
+  {
+    "code": "POP",
+    "children": [
+      {
+        "code": "DANCE_POP"
+      },
+      {
+        "code": "SYNTHPOP"
+      },
+      {
+        "code": "ELECTROPOP"
+      },
+      {
+        "code": "POP_ROCK"
+      },
+      {
+        "code": "TEEN_POP"
+      },
+      {
+        "code": "K_POP"
+      },
+      {
+        "code": "J_POP"
+      },
+      {
+        "code": "C_POP"
+      },
+      {
+        "code": "POWER_POP"
+      },
+      {
+        "code": "BAROQUE_POP"
+      },
+      {
+        "code": "ORCHESTRAL_POP"
+      },
+      {
+        "code": "ART_POP"
+      },
+      {
+        "code": "INDIE_POP"
+      },
+      {
+        "code": "CHAMBER_POP"
+      },
+      {
+        "code": "BUBBLEGUM_POP"
+      },
+      {
+        "code": "CITY_POP"
+      },
+      {
+        "code": "SOPHISTI_POP"
+      },
+      {
+        "code": "SUNSHINE_POP"
+      },
+      {
+        "code": "HYPERPOP"
+      },
+      {
+        "code": "BEDROOM_POP"
+      },
+      {
+        "code": "LATIN_POP"
+      },
+      {
+        "code": "EUROPOP"
+      },
+      {
+        "code": "SCHLAGER"
+      }
+    ]
+  },
+  {
+    "code": "HIP_HOP_AND_RAP",
+    "children": [
+      {
+        "code": "EAST_COAST_HIP_HOP"
+      },
+      {
+        "code": "WEST_COAST_HIP_HOP"
+      },
+      {
+        "code": "SOUTHERN_HIP_HOP"
+      },
+      {
+        "code": "TRAP_HIP_HOP"
+      },
+      {
+        "code": "DRILL"
+      },
+      {
+        "code": "BOOM_BAP"
+      },
+      {
+        "code": "GANGSTA_RAP"
+      },
+      {
+        "code": "G_FUNK"
+      },
+      {
+        "code": "CONSCIOUS_HIP_HOP"
+      },
+      {
+        "code": "POLITICAL_HIP_HOP"
+      },
+      {
+        "code": "JAZZ_RAP"
+      },
+      {
+        "code": "ALTERNATIVE_HIP_HOP"
+      },
+      {
+        "code": "EXPERIMENTAL_HIP_HOP"
+      },
+      {
+        "code": "CLOUD_RAP"
+      },
+      {
+        "code": "EMO_RAP"
+      },
+      {
+        "code": "LO_FI_HIP_HOP"
+      },
+      {
+        "code": "CHOPPED_AND_SCREWED"
+      },
+      {
+        "code": "MUMBLE_RAP"
+      },
+      {
+        "code": "HYPHY"
+      },
+      {
+        "code": "BOUNCE"
+      },
+      {
+        "code": "CRUNK"
+      },
+      {
+        "code": "HORRORCORE"
+      },
+      {
+        "code": "REGGAETON"
+      },
+      {
+        "code": "AFROSWING"
+      },
+      {
+        "code": "CHRISTIAN_HIP_HOP"
+      }
+    ]
+  },
+  {
+    "code": "RNB_AND_SOUL",
+    "children": [
+      {
+        "code": "CLASSIC_SOUL"
+      },
+      {
+        "code": "NORTHERN_SOUL"
+      },
+      {
+        "code": "SOUTHERN_SOUL"
+      },
+      {
+        "code": "DEEP_SOUL"
+      },
+      {
+        "code": "DOO_WOP"
+      },
+      {
+        "code": "QUIET_STORM"
+      },
+      {
+        "code": "NEW_JACK_SWING"
+      },
+      {
+        "code": "CONTEMPORARY_RNB"
+      },
+      {
+        "code": "HIP_HOP_SOUL"
+      },
+      {
+        "code": "NEO_SOUL"
+      },
+      {
+        "code": "ALTERNATIVE_RNB"
+      },
+      {
+        "code": "BLUE_EYED_SOUL"
+      },
+      {
+        "code": "FUNK_DISCO"
+      }
+    ]
+  },
+  {
+    "code": "FUNK_AND_DISCO",
+    "children": [
+      {
+        "code": "CLASSIC_FUNK"
+      },
+      {
+        "code": "P_FUNK"
+      },
+      {
+        "code": "ELECTRO_FUNK"
+      },
+      {
+        "code": "GO_GO"
+      },
+      {
+        "code": "BOOGIE"
+      },
+      {
+        "code": "DISCO"
+      },
+      {
+        "code": "EURO_DISCO"
+      },
+      {
+        "code": "ITALO_DISCO"
+      },
+      {
+        "code": "SPACE_DISCO"
+      },
+      {
+        "code": "NU_DISCO"
+      },
+      {
+        "code": "AFROBEAT"
+      }
+    ]
+  },
+  {
+    "code": "BLUES",
+    "children": [
+      {
+        "code": "DELTA_BLUES"
+      },
+      {
+        "code": "CHICAGO_BLUES"
+      },
+      {
+        "code": "ELECTRIC_BLUES"
+      },
+      {
+        "code": "JUMP_BLUES"
+      },
+      {
+        "code": "PIEDMONT_BLUES"
+      },
+      {
+        "code": "TEXAS_BLUES"
+      },
+      {
+        "code": "WEST_COAST_BLUES"
+      },
+      {
+        "code": "BRITISH_BLUES"
+      },
+      {
+        "code": "BLUES_ROCK"
+      },
+      {
+        "code": "SOUL_BLUES"
+      },
+      {
+        "code": "SWAMP_BLUES"
+      },
+      {
+        "code": "HILL_COUNTRY_BLUES"
+      }
+    ]
+  },
+  {
+    "code": "JAZZ",
+    "children": [
+      {
+        "code": "RAGTIME"
+      },
+      {
+        "code": "DIXIELAND"
+      },
+      {
+        "code": "SWING"
+      },
+      {
+        "code": "GYPSY_JAZZ"
+      },
+      {
+        "code": "BEBOP"
+      },
+      {
+        "code": "COOL_JAZZ"
+      },
+      {
+        "code": "HARD_BOP"
+      },
+      {
+        "code": "MODAL_JAZZ"
+      },
+      {
+        "code": "FREE_JAZZ"
+      },
+      {
+        "code": "JAZZ_FUSION"
+      },
+      {
+        "code": "SMOOTH_JAZZ"
+      },
+      {
+        "code": "ACID_JAZZ"
+      },
+      {
+        "code": "SOUL_JAZZ"
+      },
+      {
+        "code": "LATIN_JAZZ"
+      },
+      {
+        "code": "NU_JAZZ"
+      },
+      {
+        "code": "VOCAL_JAZZ"
+      },
+      {
+        "code": "AVANT_GARDE_JAZZ"
+      },
+      {
+        "code": "JAZZ_RAP"
+      }
+    ]
+  },
+  {
+    "code": "GOSPEL_AND_WORSHIP",
+    "children": [
+      {
+        "code": "SPIRITUALS"
+      },
+      {
+        "code": "BLACK_GOSPEL"
+      },
+      {
+        "code": "SOUTHERN_GOSPEL"
+      },
+      {
+        "code": "CONTEMPORARY_GOSPEL"
+      },
+      {
+        "code": "URBAN_CONTEMPORARY_GOSPEL"
+      },
+      {
+        "code": "CONTEMPORARY_CHRISTIAN_MUSIC"
+      },
+      {
+        "code": "PRAISE_AND_WORSHIP"
+      },
+      {
+        "code": "CHRISTIAN_ROCK"
+      },
+      {
+        "code": "CHRISTIAN_METAL"
+      },
+      {
+        "code": "CHRISTIAN_HIP_HOP"
+      }
+    ]
+  },
+  {
+    "code": "CLASSICAL_AND_ART_MUSIC",
+    "children": [
+      {
+        "code": "MEDIEVAL_MUSIC"
+      },
+      {
+        "code": "RENAISSANCE_MUSIC"
+      },
+      {
+        "code": "BAROQUE_MUSIC"
+      },
+      {
+        "code": "CLASSICAL_PERIOD"
+      },
+      {
+        "code": "ROMANTIC_MUSIC"
+      },
+      {
+        "code": "IMPRESSIONISM"
+      },
+      {
+        "code": "MODERNISM"
+      },
+      {
+        "code": "NEOCLASSICISM"
+      },
+      {
+        "code": "MINIMALISM"
+      },
+      {
+        "code": "POST_MINIMALISM"
+      },
+      {
+        "code": "CONTEMPORARY_CLASSICAL"
+      },
+      {
+        "code": "OPERA"
+      },
+      {
+        "code": "CHORAL_SACRED"
+      },
+      {
+        "code": "CHAMBER_MUSIC"
+      },
+      {
+        "code": "ORCHESTRAL"
+      },
+      {
+        "code": "CONCERTO"
+      },
+      {
+        "code": "ELECTROACOUSTIC"
+      },
+      {
+        "code": "FILM_SCORE"
+      },
+      {
+        "code": "MUSICAL_THEATRE"
+      }
+    ]
+  },
+  {
+    "code": "FOLK_AND_SINGER_SONGWRITER",
+    "children": [
+      {
+        "code": "TRADITIONAL_FOLK"
+      },
+      {
+        "code": "FOLK_REVIVAL"
+      },
+      {
+        "code": "CONTEMPORARY_FOLK"
+      },
+      {
+        "code": "SINGER_SONGWRITER"
+      },
+      {
+        "code": "INDIE_FOLK"
+      },
+      {
+        "code": "FOLKTRONICA"
+      },
+      {
+        "code": "CELTIC_FOLK"
+      },
+      {
+        "code": "ENGLISH_FOLK"
+      },
+      {
+        "code": "APPALACHIAN_FOLK"
+      },
+      {
+        "code": "OLD_TIME"
+      },
+      {
+        "code": "FOLK_ROCK"
+      },
+      {
+        "code": "FOLK_PUNK"
+      },
+      {
+        "code": "AMERICANA"
+      }
+    ]
+  },
+  {
+    "code": "COUNTRY_AND_AMERICANA",
+    "children": [
+      {
+        "code": "COUNTRY_POP"
+      },
+      {
+        "code": "COUNTRY_ROCK"
+      },
+      {
+        "code": "OUTLAW_COUNTRY"
+      },
+      {
+        "code": "HONKY_TONK"
+      },
+      {
+        "code": "BAKERSFIELD_SOUND"
+      },
+      {
+        "code": "NASHVILLE_SOUND"
+      },
+      {
+        "code": "BLUEGRASS"
+      },
+      {
+        "code": "WESTERN_SWING"
+      },
+      {
+        "code": "COWBOY_WESTERN"
+      },
+      {
+        "code": "ALT_COUNTRY"
+      },
+      {
+        "code": "AMERICANA"
+      },
+      {
+        "code": "RED_DIRT"
+      },
+      {
+        "code": "TEXAS_COUNTRY"
+      },
+      {
+        "code": "BRO_COUNTRY"
+      },
+      {
+        "code": "ROCKABILLY"
+      },
+      {
+        "code": "COUNTRY_BLUES"
+      },
+      {
+        "code": "CAJUN_ZYDECO"
+      }
+    ]
+  },
+  {
+    "code": "REGGAE_SKA_AND_DUB",
+    "children": [
+      {
+        "code": "SKA"
+      },
+      {
+        "code": "ROCKSTEADY"
+      },
+      {
+        "code": "ROOTS_REGGAE"
+      },
+      {
+        "code": "DUB"
+      },
+      {
+        "code": "DANCEHALL"
+      },
+      {
+        "code": "RAGGA"
+      },
+      {
+        "code": "LOVERS_ROCK"
+      },
+      {
+        "code": "REGGAE_FUSION"
+      },
+      {
+        "code": "SKA_PUNK"
+      },
+      {
+        "code": "SOCA"
+      },
+      {
+        "code": "CALYPSO"
+      }
+    ]
+  },
+  {
+    "code": "LATIN_AND_IBERO_AMERICAN",
+    "children": [
+      {
+        "code": "SALSA"
+      },
+      {
+        "code": "MERENGUE"
+      },
+      {
+        "code": "BACHATA"
+      },
+      {
+        "code": "CUMBIA"
+      },
+      {
+        "code": "REGGAETON"
+      },
+      {
+        "code": "LATIN_POP"
+      },
+      {
+        "code": "BOSSA_NOVA"
+      },
+      {
+        "code": "SAMBA"
+      },
+      {
+        "code": "MPB"
+      },
+      {
+        "code": "FORRO"
+      },
+      {
+        "code": "TANGO"
+      },
+      {
+        "code": "FLAMENCO"
+      },
+      {
+        "code": "MARIACHI"
+      },
+      {
+        "code": "RANCHERA"
+      },
+      {
+        "code": "NORTENO"
+      },
+      {
+        "code": "TEJANO"
+      },
+      {
+        "code": "LATIN_ROCK"
+      },
+      {
+        "code": "LATIN_JAZZ"
+      },
+      {
+        "code": "DEMBOW"
+      },
+      {
+        "code": "LATIN_TRAP"
+      }
+    ]
+  },
+  {
+    "code": "WORLD_AND_REGIONAL",
+    "children": [
+      {
+        "code": "AFROBEATS"
+      },
+      {
+        "code": "AFROBEAT"
+      },
+      {
+        "code": "HIGHLIFE"
+      },
+      {
+        "code": "SOUKOUS"
+      },
+      {
+        "code": "AMAPIANO"
+      },
+      {
+        "code": "GQOM"
+      },
+      {
+        "code": "KWAITO"
+      },
+      {
+        "code": "COUPE_DECALE"
+      },
+      {
+        "code": "RAI"
+      },
+      {
+        "code": "ARABIC_POP"
+      },
+      {
+        "code": "FILMI"
+      },
+      {
+        "code": "BHANGRA"
+      },
+      {
+        "code": "QAWWALI"
+      },
+      {
+        "code": "GAMELAN"
+      },
+      {
+        "code": "ENKA"
+      },
+      {
+        "code": "FADO"
+      },
+      {
+        "code": "CHANSON"
+      },
+      {
+        "code": "KLEZMER"
+      },
+      {
+        "code": "BALKAN_BRASS"
+      },
+      {
+        "code": "SEVDAH"
+      },
+      {
+        "code": "K_POP_JPOP"
+      },
+      {
+        "code": "CITY_POP"
+      }
+    ]
+  },
+  {
+    "code": "AMBIENT_EXPERIMENTAL_AND_NOISE",
+    "children": [
+      {
+        "code": "AMBIENT"
+      },
+      {
+        "code": "DARK_AMBIENT"
+      },
+      {
+        "code": "DRONE"
+      },
+      {
+        "code": "NOISE"
+      },
+      {
+        "code": "HARSH_NOISE"
+      },
+      {
+        "code": "MUSIQUE_CONCRETE"
+      },
+      {
+        "code": "ELECTROACOUSTIC"
+      },
+      {
+        "code": "SOUND_COLLAGE"
+      },
+      {
+        "code": "LOWERCASE"
+      },
+      {
+        "code": "FIELD_RECORDINGS"
+      },
+      {
+        "code": "PSYBIENT"
+      },
+      {
+        "code": "SPACE_MUSIC"
+      },
+      {
+        "code": "AMBIENT_DUB"
+      }
+    ]
+  },
+  {
+    "code": "NEW_AGE_AND_MEDITATION",
+    "children": [
+      {
+        "code": "NEW_AGE"
+      },
+      {
+        "code": "MEDITATION_MUSIC"
+      },
+      {
+        "code": "HEALING_MUSIC"
+      },
+      {
+        "code": "NEOCLASSICAL_PIANO"
+      },
+      {
+        "code": "NATURE_SLEEP_MUSIC"
+      }
+    ]
+  },
+  {
+    "code": "SOUNDTRACKS_AND_SCORE",
+    "children": [
+      {
+        "code": "FILM_SCORE"
+      },
+      {
+        "code": "TELEVISION_MUSIC"
+      },
+      {
+        "code": "VIDEO_GAME_MUSIC"
+      },
+      {
+        "code": "TRAILER_MUSIC"
+      },
+      {
+        "code": "LIBRARY_MUSIC"
+      },
+      {
+        "code": "ANIME_MUSIC"
+      }
+    ]
+  },
+  {
+    "code": "EASY_LISTENING_AND_LOUNGE",
+    "children": [
+      {
+        "code": "LOUNGE"
+      },
+      {
+        "code": "EXOTICA"
+      },
+      {
+        "code": "LIGHT_MUSIC"
+      },
+      {
+        "code": "MUZAK"
+      },
+      {
+        "code": "DINNER_JAZZ"
+      }
+    ]
+  },
+  {
+    "code": "SPOKEN_WORD_COMEDY_AND_NOVELTY",
+    "children": [
+      {
+        "code": "STAND_UP_COMEDY"
+      },
+      {
+        "code": "SPOKEN_WORD_POETRY"
+      },
+      {
+        "code": "NOVELTY"
+      },
+      {
+        "code": "AUDIOBOOK_EXCERPTS"
+      }
+    ]
+  },
+  {
+    "code": "CHILDRENS_MUSIC",
+    "children": [
+      {
+        "code": "CHILDRENS_FOLK"
+      },
+      {
+        "code": "EDUCATIONAL_MUSIC"
+      },
+      {
+        "code": "LULLABIES"
+      },
+      {
+        "code": "FAMILY_SOUNDTRACKS"
+      }
+    ]
+  }
+]

@@ -15,6 +15,11 @@ spring:
       ddl-auto: update
     show-sql: ${SHOW_SQL:true}
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 115MB
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -38,6 +43,8 @@ app:
 
   storage:
     avatar-path: ${AVATARS_PATH:./storage/avatars}
+    track-audio-path: ${TRACK_AUDIO_PATH:./storage/tracks/audio}
+    track-cover-path: ${TRACK_COVERS_PATH:./storage/tracks/covers}
 
 jwt:
   secret: ${JWT_SECRET}

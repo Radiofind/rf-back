@@ -5,7 +5,7 @@ import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.entity.ArtistSocialLinks;
 import com.radiofind.artist.entity.ArtistType;
 import com.radiofind.security.CustomUserDetails;
-import com.radiofind.storage.service.AvatarImageType;
+import com.radiofind.storage.service.ImageType;
 import com.radiofind.storage.service.FileStorageService;
 import com.radiofind.user.dto.AvatarResponse;
 import com.radiofind.user.dto.CurrentUserResponse;
@@ -457,7 +457,7 @@ public class UserService {
           "Only JPEG, PNG and WebP images are allowed");
     }
 
-    if (AvatarImageType.detect(file).isEmpty()) {
+    if (ImageType.detect(file).isEmpty()) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
           "Avatar file content is not a supported image");
