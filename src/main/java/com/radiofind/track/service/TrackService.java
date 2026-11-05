@@ -24,6 +24,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -55,9 +59,8 @@ public class TrackService {
 
     AudioType audioType = validateAudio(audio);
     ImageType coverType = validateCover(cover);
-    String genre = request.getGenre().trim();
-    String subgenre = normalizeNullableText(request.getSubgenre());
-    validateGenre(genre, subgenre);
+    List<String> genres = request.getGenres().stream().map(String::trim).toList();
+    validateGenres(genres);
 
     String audioFileName = trackFileStorageService.saveAudio(audio, audioType);
     String coverFileName = null;
@@ -70,8 +73,7 @@ public class TrackService {
 
       Track draft = Track.builder()
           .title(request.getTitle().trim())
-          .genre(genre)
-          .subgenre(subgenre)
+          .genres(new ArrayList<>(genres))
           .description(normalizeNullableText(request.getDescription()))
           .status(TrackStatus.PENDING_REVIEW)
           .audioFileName(audioFileName)
@@ -158,21 +160,13 @@ public class TrackService {
             "Only JPEG, PNG and WebP cover images are allowed"));
   }
 
-  private void validateGenre(String genre, String subgenre) {
-    if (!genreCatalog.isGenre(genre)) {
+  private void validateGenres(List<String> genres) {
+    if (!genres.stream().allMatch(genreCatalog::isGenre)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown genre");
     }
 
-    if (subgenre == null) {
-      return;
-    }
-
-    if (!genreCatalog.isGenre(subgenre)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown subgenre");
-    }
-
-    if (subgenre.equals(genre)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subgenre must differ from the genre");
+    if (new HashSet<>(genres).size() != genres.size()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Genres must not repeat");
     }
   }
 

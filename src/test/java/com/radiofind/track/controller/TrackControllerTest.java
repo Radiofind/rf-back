@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,14 +70,14 @@ class TrackControllerTest {
     mockMvc.perform(multipart("/api/tracks")
             .file(audio)
             .param("title", "Midnight Dreams")
-            .param("genre", "ROCK")
+            .param("genres", "GRUNGE", "INDIE_ROCK")
             .with(user(ada)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(42));
 
     verify(trackService).upload(eq(ada), request.capture(), any(), isNull());
     assertEquals("Midnight Dreams", request.getValue().getTitle());
-    assertEquals("ROCK", request.getValue().getGenre());
+    assertEquals(List.of("GRUNGE", "INDIE_ROCK"), request.getValue().getGenres());
   }
 
   @Test
@@ -95,7 +96,7 @@ class TrackControllerTest {
     mockMvc.perform(multipart("/api/tracks")
             .file(new MockMultipartFile("audio", "song.mp3", "audio/mpeg", new byte[] { 1 }))
             .param("title", "Midnight Dreams")
-            .param("genre", "GRUNGE"))
+            .param("genres", "GRUNGE"))
         .andExpect(status().isUnauthorized());
   }
 }

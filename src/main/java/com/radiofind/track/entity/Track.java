@@ -8,6 +8,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tracks", indexes = {
@@ -32,15 +34,15 @@ public class Track {
   @Column(nullable = false, length = 150)
   private String title;
 
-  // Snapshot of the account's artist name at upload time, so later profile edits do not rewrite released tracks
   @Column(name = "artist_name", nullable = false)
   private String artistName;
 
-  @Column(nullable = false, length = 100)
-  private String genre;
-
-  @Column(length = 100)
-  private String subgenre;
+  @ElementCollection
+  @CollectionTable(name = "track_genres", joinColumns = @JoinColumn(name = "track_id"))
+  @OrderColumn(name = "position")
+  @Column(name = "genre", nullable = false, length = 100)
+  @Builder.Default
+  private List<String> genres = new ArrayList<>();
 
   @Column(length = 1000)
   private String description;
