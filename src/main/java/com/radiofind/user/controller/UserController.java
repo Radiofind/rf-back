@@ -4,7 +4,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.user.dto.*;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.service.UserService;
-import com.radiofind.storage.service.AvatarImageType;
+import com.radiofind.storage.service.ImageType;
 import com.radiofind.storage.service.FileStorageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,8 +55,8 @@ public class UserController {
     try {
       Resource resource = new UrlResource(avatarPath.toUri());
 
-      MediaType mediaType = AvatarImageType.fromFileName(user.getAvatarFileName())
-          .map(AvatarImageType::getMediaType)
+      MediaType mediaType = ImageType.fromFileName(user.getAvatarFileName())
+          .map(ImageType::getMediaType)
           .orElse(MediaType.APPLICATION_OCTET_STREAM);
 
       return ResponseEntity.ok()

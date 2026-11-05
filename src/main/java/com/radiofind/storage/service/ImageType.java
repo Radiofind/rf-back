@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-public enum AvatarImageType {
+public enum ImageType {
 
   JPEG(MediaType.IMAGE_JPEG, ".jpg", ".jpeg"),
   PNG(MediaType.IMAGE_PNG, ".png"),
@@ -31,7 +31,7 @@ public enum AvatarImageType {
 
   private final List<String> extensions;
 
-  AvatarImageType(MediaType mediaType, String... extensions) {
+  ImageType(MediaType mediaType, String... extensions) {
     this.mediaType = mediaType;
     this.extensions = List.of(extensions);
   }
@@ -44,7 +44,7 @@ public enum AvatarImageType {
     return extensions.getFirst();
   }
 
-  public static Optional<AvatarImageType> detect(MultipartFile file) {
+  public static Optional<ImageType> detect(MultipartFile file) {
     try (InputStream inputStream = file.getInputStream()) {
       return detect(inputStream.readNBytes(HEADER_LENGTH));
     } catch (IOException e) {
@@ -52,7 +52,7 @@ public enum AvatarImageType {
     }
   }
 
-  public static Optional<AvatarImageType> fromFileName(String fileName) {
+  public static Optional<ImageType> fromFileName(String fileName) {
     String lowerCaseName = fileName.toLowerCase(Locale.ROOT);
 
     return Arrays.stream(values())
@@ -60,7 +60,7 @@ public enum AvatarImageType {
         .findFirst();
   }
 
-  private static Optional<AvatarImageType> detect(byte[] header) {
+  private static Optional<ImageType> detect(byte[] header) {
     if (startsWith(header, 0, JPEG_SIGNATURE)) {
       return Optional.of(JPEG);
     }
