@@ -10,6 +10,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -20,8 +21,11 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,5 +98,12 @@ class EmailServiceTest {
     assertEquals(2, texts.size());
     texts.forEach(text -> assertTrue(text.contains(resetLink), text));
     assertTrue(texts.get(1).contains("href=\"" + resetLink + "\""));
+  }
+
+  @Test
+  void swallowsSendFailureWhenMailServerRejectsTheMessage() {
+    doThrow(new MailSendException("421 Temporary System Problem")).when(mailSender).send(any(MimeMessage.class));
+
+    assertDoesNotThrow(() -> emailService.sendTwoFactorCode("ada@example.com", "042133"));
   }
 }
