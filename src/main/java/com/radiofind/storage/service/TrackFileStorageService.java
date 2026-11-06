@@ -36,6 +36,10 @@ public class TrackFileStorageService {
     covers.delete(fileName);
   }
 
+  public Path getAudioPath(String fileName) {
+    return audio.resolve(fileName);
+  }
+
   public boolean coverExists(String fileName) {
     return covers.exists(fileName);
   }

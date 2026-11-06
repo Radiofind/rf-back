@@ -22,6 +22,7 @@ public class TrackMapper {
         .status(track.getStatus())
         .audioFormat(track.getAudioFormat())
         .audioSizeBytes(track.getAudioSizeBytes())
+        .durationSeconds(track.getDurationSeconds())
         .coverUrl(coverUrl(track))
         .createdAt(track.getCreatedAt())
         .build();

@@ -29,6 +29,8 @@ public class TrackResponse {
 
   private long audioSizeBytes;
 
+  private Integer durationSeconds;
+
   private String coverUrl;
 
   private Instant createdAt;

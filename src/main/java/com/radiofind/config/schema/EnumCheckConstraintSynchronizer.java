@@ -7,6 +7,7 @@ import com.radiofind.settings.entity.AudioQuality;
 import com.radiofind.settings.entity.Language;
 import com.radiofind.settings.entity.ProfileVisibility;
 import com.radiofind.storage.service.AudioType;
+import com.radiofind.track.entity.TrackReviewFlagType;
 import com.radiofind.track.entity.TrackStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
@@ -18,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Hibernate's ddl-auto=update creates CHECK constraints for enum columns but never widens them for new values
 @Component
 @RequiredArgsConstructor
 public class EnumCheckConstraintSynchronizer {
@@ -31,7 +31,8 @@ public class EnumCheckConstraintSynchronizer {
       new EnumColumn("tracks", "status", TrackStatus.class),
       new EnumColumn("tracks", "audio_format", AudioType.class),
       new EnumColumn("activities", "type", ActivityType.class),
-      new EnumColumn("notifications", "type", NotificationType.class));
+      new EnumColumn("notifications", "type", NotificationType.class),
+      new EnumColumn("track_review_flags", "type", TrackReviewFlagType.class));
 
   private final JdbcTemplate jdbcTemplate;
 

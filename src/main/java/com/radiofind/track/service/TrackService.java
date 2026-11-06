@@ -10,8 +10,17 @@ import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.UploadTrackRequest;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.TrackStatus;
+import com.radiofind.track.entity.TrackFingerprint;
+import com.radiofind.track.entity.TrackReviewFlag;
 import com.radiofind.track.event.TrackUploadedEvent;
+import com.radiofind.track.fingerprint.AudioFingerprint;
+import com.radiofind.track.fingerprint.AudioFingerprinter;
+import com.radiofind.track.fingerprint.DuplicateCheck;
+import com.radiofind.track.fingerprint.DuplicateTrackDetector;
+import com.radiofind.track.fingerprint.UnreadableAudioException;
+import com.radiofind.track.repository.TrackFingerprintRepository;
 import com.radiofind.track.repository.TrackRepository;
+import com.radiofind.track.repository.TrackReviewFlagRepository;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +60,14 @@ public class TrackService {
 
   private final TransactionTemplate transactionTemplate;
 
+  private final AudioFingerprinter audioFingerprinter;
+
+  private final DuplicateTrackDetector duplicateTrackDetector;
+
+  private final TrackFingerprintRepository trackFingerprintRepository;
+
+  private final TrackReviewFlagRepository trackReviewFlagRepository;
+
   public TrackResponse upload(
       CustomUserDetails userDetails,
       UploadTrackRequest request,
@@ -71,6 +88,8 @@ public class TrackService {
           ? trackFileStorageService.saveCover(cover, coverType)
           : null;
 
+      AudioFingerprint fingerprint = fingerprint(audioFileName);
+
       Track draft = Track.builder()
           .title(request.getTitle().trim())
           .genres(new ArrayList<>(genres))
@@ -80,9 +99,11 @@ public class TrackService {
           .audioFormat(audioType)
           .audioSizeBytes(audio.getSize())
           .coverFileName(coverFileName)
+          .durationSeconds(fingerprint.durationSeconds())
           .build();
 
-      track = transactionTemplate.execute(status -> persist(userDetails.getUser().getId(), draft));
+      track = transactionTemplate.execute(
+          status -> persist(userDetails.getUser().getId(), draft, fingerprint));
     } finally {
       if (track == null) {
         trackFileStorageService.deleteAudio(audioFileName);
@@ -106,14 +127,41 @@ public class TrackService {
     return new TrackCover(trackFileStorageService.getCoverPath(track.getCoverFileName()), mediaType);
   }
 
-  private Track persist(Long ownerId, Track draft) {
+  private AudioFingerprint fingerprint(String audioFileName) {
+    try {
+      return audioFingerprinter.fingerprint(trackFileStorageService.getAudioPath(audioFileName));
+    } catch (UnreadableAudioException e) {
+      throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, e.getMessage(), e);
+    }
+  }
+
+  private Track persist(Long ownerId, Track draft, AudioFingerprint fingerprint) {
     User owner = userRepository.findById(ownerId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+    trackRepository.lockUploadsOf(ownerId);
+    DuplicateCheck duplicateCheck = duplicateTrackDetector.check(ownerId, fingerprint);
+
+    if (duplicateCheck.ownDuplicate().isPresent()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already uploaded this track");
+    }
 
     draft.setOwner(owner);
     draft.setArtistName(resolveArtistName(owner));
 
     Track track = trackRepository.save(draft);
+    trackFingerprintRepository.save(TrackFingerprint.builder()
+        .track(track)
+        .points(fingerprint.points())
+        .build());
+    trackReviewFlagRepository.saveAll(duplicateCheck.flaggedMatches().stream()
+        .map(match -> TrackReviewFlag.builder()
+            .track(track)
+            .type(match.flag())
+            .matchedTrack(match.track())
+            .similarity(match.similarity())
+            .build())
+        .toList());
     eventPublisher.publishEvent(new TrackUploadedEvent(track));
 
     return track;
