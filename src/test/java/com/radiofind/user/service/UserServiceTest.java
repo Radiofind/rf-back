@@ -9,7 +9,9 @@ import com.radiofind.storage.service.FileStorageService;
 import com.radiofind.storage.service.TestImages;
 import com.radiofind.user.dto.UpdateUserProfileRequest;
 import com.radiofind.user.dto.UpdateUserProfileResponse;
+import com.radiofind.user.dto.UserProfileResponse;
 import com.radiofind.user.entity.User;
+import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,14 +54,18 @@ class UserServiceTest {
 
   private UserRepository userRepository;
 
+  private TrackRepository trackRepository;
+
   private UserService userService;
 
   @BeforeEach
   void setUp() {
     userRepository = mock(UserRepository.class);
+    trackRepository = mock(TrackRepository.class);
     userService = new UserService(
         userRepository,
-        new FileStorageService(avatarsPath.toString()));
+        new FileStorageService(avatarsPath.toString()),
+        trackRepository);
   }
 
   private CustomUserDetails userWithAvatar(String avatarFileName) {
@@ -408,5 +414,16 @@ class UserServiceTest {
     userService.deleteAvatar(userWithAvatar(null));
 
     verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  void profileCountsEveryTrackTheUserUploaded() {
+    User user = User.builder().id(USER_ID).name("Ada").surname("Lovelace").email("ada@example.com").build();
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+    when(trackRepository.countByOwnerId(USER_ID)).thenReturn(3L);
+
+    UserProfileResponse profile = userService.getUserProfile(new CustomUserDetails(user));
+
+    assertEquals(3L, profile.getUploadsCount());
   }
 }

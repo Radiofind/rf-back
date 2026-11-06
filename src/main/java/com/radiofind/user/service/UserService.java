@@ -7,6 +7,7 @@ import com.radiofind.artist.entity.ArtistType;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.ImageType;
 import com.radiofind.storage.service.FileStorageService;
+import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.dto.AvatarResponse;
 import com.radiofind.user.dto.CurrentUserResponse;
 import com.radiofind.user.dto.UpdateUserProfileRequest;
@@ -36,11 +37,15 @@ public class UserService {
 
   private final FileStorageService fileStorageService;
 
+  private final TrackRepository trackRepository;
+
   public UserService(
       UserRepository userRepository,
-      FileStorageService fileStorageService) {
+      FileStorageService fileStorageService,
+      TrackRepository trackRepository) {
     this.userRepository = userRepository;
     this.fileStorageService = fileStorageService;
+    this.trackRepository = trackRepository;
   }
 
   public CurrentUserResponse getCurrentUser(
@@ -242,6 +247,7 @@ public class UserService {
                 ? toSocialLinksDto(artistProfile.getSocialLinks())
                 : null)
         .registeredAt(user.getCreatedAt())
+        .uploadsCount(trackRepository.countByOwnerId(user.getId()))
         .avatarUrl(getAvatarUrl(user))
         .build();
   }
