@@ -61,6 +61,9 @@ public class Track {
   @Column(name = "audio_size_bytes", nullable = false)
   private long audioSizeBytes;
 
+  @Column(name = "duration_seconds")
+  private Integer durationSeconds;
+
   @Column(name = "cover_file_name")
   private String coverFileName;
 

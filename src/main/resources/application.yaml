@@ -49,6 +49,15 @@ app:
     track-audio-path: ${TRACK_AUDIO_PATH:./storage/tracks/audio}
     track-cover-path: ${TRACK_COVERS_PATH:./storage/tracks/covers}
 
+  fingerprint:
+    fpcalc-path: ${FPCALC_PATH:fpcalc}
+    timeout: 30s
+    duplicate-similarity: 0.85
+    possible-duplicate-similarity: 0.70
+    duration-tolerance-seconds: 15
+    max-offset: 80
+    min-overlap: 40
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
