@@ -21,7 +21,7 @@ class EnumCheckConstraintSynchronizerTest {
 
     new EnumCheckConstraintSynchronizer(jdbcTemplate, mock(EntityManagerFactory.class)).synchronize();
 
-    verify(jdbcTemplate, times(8)).execute(sql.capture());
+    verify(jdbcTemplate, times(9)).execute(sql.capture());
     assertEquals(
         List.of(
             "ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_language_check, "
@@ -47,7 +47,10 @@ class EnumCheckConstraintSynchronizerTest {
                 + "CHECK (type IN ('TRACK_UPLOADED'))",
             "ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check, "
                 + "ADD CONSTRAINT notifications_type_check "
-                + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW'))"),
+                + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW'))",
+            "ALTER TABLE track_review_flags DROP CONSTRAINT IF EXISTS track_review_flags_type_check, "
+                + "ADD CONSTRAINT track_review_flags_type_check "
+                + "CHECK (type IN ('MATCHES_OTHER_USERS_TRACK', 'RESEMBLES_OWN_TRACK', 'REUPLOAD_OF_REJECTED_TRACK'))"),
         sql.getAllValues());
   }
 }

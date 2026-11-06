@@ -13,6 +13,16 @@ import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.repository.TrackRepository;
+import com.radiofind.track.entity.TrackReviewFlag;
+import com.radiofind.track.entity.TrackReviewFlagType;
+import com.radiofind.track.fingerprint.AudioFingerprint;
+import com.radiofind.track.fingerprint.AudioFingerprinter;
+import com.radiofind.track.fingerprint.DuplicateCheck;
+import com.radiofind.track.fingerprint.DuplicateTrackDetector;
+import com.radiofind.track.fingerprint.TrackMatch;
+import com.radiofind.track.fingerprint.UnreadableAudioException;
+import com.radiofind.track.repository.TrackFingerprintRepository;
+import com.radiofind.track.repository.TrackReviewFlagRepository;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -40,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -48,6 +59,8 @@ import static org.mockito.Mockito.when;
 class TrackServiceTest {
 
   private static final byte[] MP3 = "ID3\u0004\0\0\0\0\0\0".getBytes(StandardCharsets.ISO_8859_1);
+
+  private static final AudioFingerprint FINGERPRINT = new AudioFingerprint(214, new int[] { 1, 2, 3 });
 
   @Mock
   private TrackRepository trackRepository;
@@ -63,6 +76,18 @@ class TrackServiceTest {
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
+
+  @Mock
+  private AudioFingerprinter audioFingerprinter;
+
+  @Mock
+  private DuplicateTrackDetector duplicateTrackDetector;
+
+  @Mock
+  private TrackFingerprintRepository trackFingerprintRepository;
+
+  @Mock
+  private TrackReviewFlagRepository trackReviewFlagRepository;
 
   @Spy
   private TrackMapper trackMapper = new TrackMapper();
@@ -85,6 +110,8 @@ class TrackServiceTest {
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
     when(trackFileStorageService.saveAudio(audio, AudioType.MP3)).thenReturn("a.mp3");
     when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(duplicateTrackDetector.check(7L, FINGERPRINT)).thenReturn(new DuplicateCheck(Optional.empty(), List.of()));
     when(trackRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     ArgumentCaptor<TrackUploadedEvent> event = ArgumentCaptor.forClass(TrackUploadedEvent.class);
 
@@ -97,6 +124,7 @@ class TrackServiceTest {
     assertEquals(List.of("BLUES_ROCK", "GRUNGE"), track.getGenres());
     assertEquals(TrackStatus.PENDING_REVIEW, track.getStatus());
     assertEquals("a.mp3", track.getAudioFileName());
+    assertEquals(214, track.getDurationSeconds());
     assertEquals("The Engines", response.getArtistName());
   }
 
@@ -109,6 +137,8 @@ class TrackServiceTest {
     MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
     when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(duplicateTrackDetector.check(7L, FINGERPRINT)).thenReturn(new DuplicateCheck(Optional.empty(), List.of()));
     when(trackRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     TrackResponse response = trackService.upload(new CustomUserDetails(owner), request, audio, null);
@@ -127,6 +157,8 @@ class TrackServiceTest {
     when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
     when(trackFileStorageService.saveCover(cover, ImageType.PNG)).thenReturn("c.png");
     when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(duplicateTrackDetector.check(7L, FINGERPRINT)).thenReturn(new DuplicateCheck(Optional.empty(), List.of()));
     when(trackRepository.save(any())).thenAnswer(invocation -> {
       Track track = invocation.getArgument(0);
       track.setId(42L);
@@ -208,6 +240,8 @@ class TrackServiceTest {
     when(trackFileStorageService.saveAudio(audio, AudioType.MP3)).thenReturn("a.mp3");
     when(trackFileStorageService.saveCover(cover, ImageType.PNG)).thenReturn("c.png");
     when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(duplicateTrackDetector.check(7L, FINGERPRINT)).thenReturn(new DuplicateCheck(Optional.empty(), List.of()));
     when(trackRepository.save(any())).thenThrow(new DataIntegrityViolationException("constraint"));
 
     assertThrows(DataIntegrityViolationException.class,
@@ -237,5 +271,74 @@ class TrackServiceTest {
     ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> trackService.getCover(42L));
 
     assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+  }
+
+  @Test
+  void rejectsATrackTheUserHasAlreadyUploadedAndDropsItsFiles() {
+    User owner = User.builder().id(7L).name("Ada").surname("Lovelace").build();
+    UploadTrackRequest request = new UploadTrackRequest();
+    request.setTitle("Midnight Dreams");
+    request.setGenres(List.of("GRUNGE"));
+    MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
+    Track earlierUpload = Track.builder().id(41L).owner(owner).status(TrackStatus.APPROVED).build();
+    when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
+    when(trackFileStorageService.saveAudio(audio, AudioType.MP3)).thenReturn("a.mp3");
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(duplicateTrackDetector.check(7L, FINGERPRINT))
+        .thenReturn(new DuplicateCheck(Optional.of(earlierUpload), List.of()));
+
+    ResponseStatusException error = assertThrows(ResponseStatusException.class,
+        () -> trackService.upload(new CustomUserDetails(owner), request, audio, null));
+
+    assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+    verify(trackRepository, never()).save(any());
+    verify(trackFileStorageService).deleteAudio("a.mp3");
+  }
+
+  @Test
+  void flagsEveryResemblingTrackForTheReviewer() {
+    User owner = User.builder().id(7L).name("Ada").surname("Lovelace").build();
+    User otherArtist = User.builder().id(8L).build();
+    UploadTrackRequest request = new UploadTrackRequest();
+    request.setTitle("Midnight Dreams");
+    request.setGenres(List.of("GRUNGE"));
+    MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
+    Track rejected = Track.builder().id(40L).owner(owner).status(TrackStatus.REJECTED).build();
+    Track foreign = Track.builder().id(41L).owner(otherArtist).status(TrackStatus.APPROVED).build();
+    when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
+    when(audioFingerprinter.fingerprint(any())).thenReturn(FINGERPRINT);
+    when(userRepository.findById(7L)).thenReturn(Optional.of(owner));
+    when(duplicateTrackDetector.check(7L, FINGERPRINT)).thenReturn(new DuplicateCheck(Optional.empty(), List.of(
+        new TrackMatch(rejected, TrackReviewFlagType.REUPLOAD_OF_REJECTED_TRACK, 0.97),
+        new TrackMatch(foreign, TrackReviewFlagType.MATCHES_OTHER_USERS_TRACK, 0.91))));
+    when(trackRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    ArgumentCaptor<List<TrackReviewFlag>> flags = ArgumentCaptor.captor();
+
+    trackService.upload(new CustomUserDetails(owner), request, audio, null);
+
+    verify(trackReviewFlagRepository).saveAll(flags.capture());
+    assertEquals(List.of(TrackReviewFlagType.REUPLOAD_OF_REJECTED_TRACK, TrackReviewFlagType.MATCHES_OTHER_USERS_TRACK),
+        flags.getValue().stream().map(TrackReviewFlag::getType).toList());
+    assertEquals(List.of(rejected, foreign),
+        flags.getValue().stream().map(TrackReviewFlag::getMatchedTrack).toList());
+  }
+
+  @Test
+  void rejectsAudioThatCannotBeDecodedAndDropsItsFile() {
+    UploadTrackRequest request = new UploadTrackRequest();
+    request.setTitle("Midnight Dreams");
+    request.setGenres(List.of("GRUNGE"));
+    MockMultipartFile audio = new MockMultipartFile("audio", "song.mp3", "audio/mpeg", MP3);
+    when(genreCatalog.isGenre("GRUNGE")).thenReturn(true);
+    when(trackFileStorageService.saveAudio(audio, AudioType.MP3)).thenReturn("a.mp3");
+    when(audioFingerprinter.fingerprint(any())).thenThrow(new UnreadableAudioException("Audio file could not be decoded"));
+
+    ResponseStatusException error = assertThrows(ResponseStatusException.class,
+        () -> trackService.upload(new CustomUserDetails(User.builder().id(7L).build()), request, audio, null));
+
+    assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, error.getStatusCode());
+    verify(trackFileStorageService).deleteAudio("a.mp3");
+    verifyNoInteractions(trackRepository);
   }
 }
