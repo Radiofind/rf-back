@@ -40,5 +40,7 @@ public class UserProfileResponse {
 
   private LocalDateTime registeredAt;
 
+  private long uploadsCount;
+
   private String avatarUrl;
 }
