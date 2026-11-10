@@ -2,6 +2,7 @@ package com.radiofind.track.service;
 
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
+import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
 import com.radiofind.track.repository.TrackRepository;
@@ -41,7 +42,11 @@ public class TrackEngagementService {
 
   @Transactional
   public void like(CustomUserDetails userDetails, Long trackId) {
-    findTrack(trackId);
+    Track track = findTrack(trackId);
+
+    if (track.getStatus() == TrackStatus.PENDING_REVIEW) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Track in review cannot be liked");
+    }
 
     if (trackLikeRepository.insertIfAbsent(trackId, userDetails.getUser().getId(), clock.instant()) > 0) {
       trackRepository.incrementLikes(trackId);
