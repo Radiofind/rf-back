@@ -1,6 +1,7 @@
 package com.radiofind.track.service;
 
 import com.radiofind.artist.entity.ArtistProfile;
+import com.radiofind.common.dto.PageResponse;
 import com.radiofind.genre.service.GenreCatalog;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.AudioType;
@@ -28,12 +29,17 @@ import com.radiofind.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -43,6 +49,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -261,6 +268,31 @@ class TrackServiceTest {
     TrackCover cover = trackService.getCover(42L);
 
     assertEquals(new TrackCover(Path.of("/covers/c.png"), MediaType.IMAGE_PNG), cover);
+  }
+
+  @Test
+  void ownUploadsAreListedNewestFirstWithGenresStatusAndUploadTime() {
+    User owner = User.builder().id(7L).build();
+    Track track = Track.builder()
+        .id(42L)
+        .title("Midnight Dreams")
+        .genres(List.of("AMBIENT"))
+        .status(TrackStatus.PENDING_REVIEW)
+        .createdAt(Instant.parse("2025-04-28T14:32:00Z"))
+        .build();
+    ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+    when(trackRepository.findAll(ArgumentMatchers.<Specification<Track>>any(), pageable.capture()))
+        .thenAnswer(invocation -> new PageImpl<>(List.of(track), invocation.getArgument(1), 8));
+
+    PageResponse<TrackResponse> uploads = trackService.getOwnTracks(new CustomUserDetails(owner), null, null, 1, 7);
+
+    assertEquals(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")), pageable.getValue().getSort());
+    assertEquals(1, pageable.getValue().getPageNumber());
+    assertEquals(8, uploads.totalElements());
+    TrackResponse upload = uploads.items().getFirst();
+    assertEquals(List.of("AMBIENT"), upload.getGenres());
+    assertEquals(TrackStatus.PENDING_REVIEW, upload.getStatus());
+    assertEquals(Instant.parse("2025-04-28T14:32:00Z"), upload.getCreatedAt());
   }
 
   @Test
