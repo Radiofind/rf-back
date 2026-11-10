@@ -33,5 +33,7 @@ public class TrackResponse {
 
   private String coverUrl;
 
+  private String audioUrl;
+
   private Instant createdAt;
 }

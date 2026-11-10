@@ -75,6 +75,8 @@ public class TrackService {
 
   private final TrackReviewFlagRepository trackReviewFlagRepository;
 
+  private final AudioStreamTokens audioStreamTokens;
+
   public TrackResponse upload(
       CustomUserDetails userDetails,
       UploadTrackRequest request,
@@ -135,7 +137,21 @@ public class TrackService {
 
     return PageResponse.of(
         trackRepository.findAll(filter, PageRequest.of(page, size, NEWEST_FIRST)),
-        trackMapper::toResponse);
+        track -> trackMapper.toResponse(track, audioStreamTokens.issue(track.getId())));
+  }
+
+  @Transactional(readOnly = true)
+  public TrackAudio getAudio(Long trackId, String token) {
+    if (!audioStreamTokens.grants(token, trackId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Audio link is invalid or expired");
+    }
+
+    Track track = trackRepository.findById(trackId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Track not found"));
+
+    return new TrackAudio(
+        trackFileStorageService.getAudioPath(track.getAudioFileName()),
+        track.getAudioFormat().getMediaType());
   }
 
   @Transactional(readOnly = true)
