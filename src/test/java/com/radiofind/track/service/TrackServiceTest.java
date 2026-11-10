@@ -8,6 +8,8 @@ import com.radiofind.storage.service.AudioType;
 import com.radiofind.storage.service.ImageType;
 import com.radiofind.storage.service.TestImages;
 import com.radiofind.storage.service.TrackFileStorageService;
+import com.radiofind.track.dto.OwnTracksQuery;
+import com.radiofind.track.dto.OwnTracksSort;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.UploadTrackRequest;
 import com.radiofind.track.entity.Track;
@@ -23,6 +25,7 @@ import com.radiofind.track.fingerprint.DuplicateTrackDetector;
 import com.radiofind.track.fingerprint.TrackMatch;
 import com.radiofind.track.fingerprint.UnreadableAudioException;
 import com.radiofind.track.repository.TrackFingerprintRepository;
+import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackReviewFlagRepository;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.repository.UserRepository;
@@ -52,9 +55,11 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -98,6 +103,9 @@ class TrackServiceTest {
 
   @Mock
   private AudioStreamTokens audioStreamTokens;
+
+  @Mock
+  private TrackLikeRepository trackLikeRepository;
 
   @Spy
   private TrackMapper trackMapper = new TrackMapper();
@@ -274,30 +282,51 @@ class TrackServiceTest {
   }
 
   @Test
-  void ownUploadsAreListedNewestFirstWithGenresStatusAndUploadTime() {
+  void ownUploadsShowTheirCountersAndWhetherTheOwnerLikesThem() {
     User owner = User.builder().id(7L).build();
     Track track = Track.builder()
         .id(42L)
         .title("Midnight Dreams")
         .genres(List.of("AMBIENT"))
         .status(TrackStatus.PENDING_REVIEW)
+        .durationSeconds(214)
+        .playsCount(12)
+        .likesCount(3)
         .createdAt(Instant.parse("2025-04-28T14:32:00Z"))
         .build();
     ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
     when(trackRepository.findAll(ArgumentMatchers.<Specification<Track>>any(), pageable.capture()))
         .thenAnswer(invocation -> new PageImpl<>(List.of(track), invocation.getArgument(1), 8));
     when(audioStreamTokens.issue(42L)).thenReturn("signed");
+    when(trackLikeRepository.findLikedTrackIds(7L, List.of(42L))).thenReturn(Set.of(42L));
 
-    PageResponse<TrackResponse> uploads = trackService.getOwnTracks(new CustomUserDetails(owner), null, null, 1, 7);
+    PageResponse<TrackResponse> uploads = trackService.getOwnTracks(
+        new CustomUserDetails(owner),
+        new OwnTracksQuery(null, null, OwnTracksSort.PLAYS, Sort.Direction.ASC, 1, 7));
 
-    assertEquals(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")), pageable.getValue().getSort());
+    assertEquals(
+        Sort.by(new Sort.Order(Sort.Direction.ASC, "playsCount").nullsLast(), Sort.Order.desc("id")),
+        pageable.getValue().getSort());
     assertEquals(1, pageable.getValue().getPageNumber());
     assertEquals(8, uploads.totalElements());
     TrackResponse upload = uploads.items().getFirst();
-    assertEquals(List.of("AMBIENT"), upload.getGenres());
-    assertEquals(TrackStatus.PENDING_REVIEW, upload.getStatus());
-    assertEquals(Instant.parse("2025-04-28T14:32:00Z"), upload.getCreatedAt());
+    assertEquals(214, upload.getDurationSeconds());
+    assertEquals(12, upload.getPlaysCount());
+    assertEquals(3, upload.getLikesCount());
+    assertTrue(upload.isLiked());
     assertEquals("/api/tracks/42/audio?token=signed", upload.getAudioUrl());
+  }
+
+  @Test
+  void emptyPageOfUploadsAsksNothingAboutLikes() {
+    when(trackRepository.findAll(ArgumentMatchers.<Specification<Track>>any(), ArgumentMatchers.any(Pageable.class)))
+        .thenAnswer(invocation -> new PageImpl<>(List.of(), invocation.getArgument(1), 0));
+
+    trackService.getOwnTracks(
+        new CustomUserDetails(User.builder().id(7L).build()),
+        new OwnTracksQuery(null, null, OwnTracksSort.UPLOADED, Sort.Direction.DESC, 0, 10));
+
+    verifyNoInteractions(trackLikeRepository);
   }
 
   @Test

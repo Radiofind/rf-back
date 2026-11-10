@@ -6,6 +6,8 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.security.CustomUserDetailsService;
 import com.radiofind.security.JwtAuthenticationFilter;
 import com.radiofind.security.JwtService;
+import com.radiofind.track.dto.OwnTracksQuery;
+import com.radiofind.track.dto.OwnTracksSort;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.service.TrackService;
@@ -14,6 +16,7 @@ import com.radiofind.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Sort;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,20 +46,37 @@ class UserTrackControllerTest {
   private CustomUserDetailsService userDetailsService;
 
   @Test
-  void ownTracksAreFilteredByStatusAndSearchOfTheRequest() throws Exception {
+  void ownTracksAreFilteredAndSortedAsRequested() throws Exception {
     CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).email("ada@example.com").role(Role.USER).build());
-    when(trackService.getOwnTracks(ada, TrackStatus.PENDING_REVIEW, "neon", 1, 7))
+    when(trackService.getOwnTracks(
+        ada,
+        new OwnTracksQuery(TrackStatus.PENDING_REVIEW, "neon", OwnTracksSort.PLAYS, Sort.Direction.ASC, 1, 7)))
         .thenReturn(new PageResponse<>(List.of(TrackResponse.builder().id(42L).build()), 1, 7, 8, false));
 
     mockMvc.perform(get("/api/users/me/tracks")
             .param("status", "PENDING_REVIEW")
             .param("search", "neon")
+            .param("sort", "PLAYS")
+            .param("direction", "ASC")
             .param("page", "1")
             .param("size", "7")
             .with(user(ada)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value(42))
         .andExpect(jsonPath("$.totalElements").value(8));
+  }
+
+  @Test
+  void ownTracksAreNewestFirstByDefault() throws Exception {
+    CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).email("ada@example.com").role(Role.USER).build());
+    when(trackService.getOwnTracks(
+        ada,
+        new OwnTracksQuery(null, null, OwnTracksSort.UPLOADED, Sort.Direction.DESC, 0, 10)))
+        .thenReturn(new PageResponse<>(List.of(), 0, 10, 0, false));
+
+    mockMvc.perform(get("/api/users/me/tracks").with(user(ada)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(0));
   }
 
   @Test
