@@ -5,6 +5,7 @@ import com.radiofind.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -68,6 +69,16 @@ public class Track {
 
   @Column(name = "cover_file_name")
   private String coverFileName;
+
+  @ColumnDefault("0")
+  @Column(name = "plays_count", nullable = false)
+  @Builder.Default
+  private long playsCount = 0;
+
+  @ColumnDefault("0")
+  @Column(name = "likes_count", nullable = false)
+  @Builder.Default
+  private long likesCount = 0;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

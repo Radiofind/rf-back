@@ -7,6 +7,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.AudioType;
 import com.radiofind.storage.service.ImageType;
 import com.radiofind.storage.service.TrackFileStorageService;
+import com.radiofind.track.dto.OwnTracksQuery;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.UploadTrackRequest;
 import com.radiofind.track.entity.Track;
@@ -20,6 +21,7 @@ import com.radiofind.track.fingerprint.DuplicateCheck;
 import com.radiofind.track.fingerprint.DuplicateTrackDetector;
 import com.radiofind.track.fingerprint.UnreadableAudioException;
 import com.radiofind.track.repository.TrackFingerprintRepository;
+import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.track.repository.TrackReviewFlagRepository;
 import com.radiofind.track.repository.TrackSpecifications;
@@ -28,7 +30,7 @@ import com.radiofind.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Service
@@ -50,8 +53,6 @@ public class TrackService {
   private static final long MAX_AUDIO_SIZE = 100L * 1024 * 1024;
 
   private static final long MAX_COVER_SIZE = 10L * 1024 * 1024;
-
-  private static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 
   private final TrackRepository trackRepository;
 
@@ -76,6 +77,8 @@ public class TrackService {
   private final TrackReviewFlagRepository trackReviewFlagRepository;
 
   private final AudioStreamTokens audioStreamTokens;
+
+  private final TrackLikeRepository trackLikeRepository;
 
   public TrackResponse upload(
       CustomUserDetails userDetails,
@@ -124,20 +127,23 @@ public class TrackService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<TrackResponse> getOwnTracks(
-      CustomUserDetails userDetails,
-      TrackStatus status,
-      String search,
-      int page,
-      int size) {
+  public PageResponse<TrackResponse> getOwnTracks(CustomUserDetails userDetails, OwnTracksQuery query) {
+    Long ownerId = userDetails.getUser().getId();
     Specification<Track> filter = Specification.allOf(
-        TrackSpecifications.ownedBy(userDetails.getUser().getId()),
-        TrackSpecifications.inStatus(status),
-        TrackSpecifications.titleOrArtistContains(search));
+        TrackSpecifications.ownedBy(ownerId),
+        TrackSpecifications.inStatus(query.status()),
+        TrackSpecifications.titleOrArtistContains(query.search()));
+    Page<Track> tracks = trackRepository.findAll(
+        filter,
+        PageRequest.of(query.page(), query.size(), query.sort().toSort(query.direction())));
+    Set<Long> likedTrackIds = tracks.isEmpty()
+        ? Set.of()
+        : trackLikeRepository.findLikedTrackIds(ownerId, tracks.map(Track::getId).toList());
 
-    return PageResponse.of(
-        trackRepository.findAll(filter, PageRequest.of(page, size, NEWEST_FIRST)),
-        track -> trackMapper.toResponse(track, audioStreamTokens.issue(track.getId())));
+    return PageResponse.of(tracks, track -> trackMapper.toResponse(
+        track,
+        audioStreamTokens.issue(track.getId()),
+        likedTrackIds.contains(track.getId())));
   }
 
   @Transactional(readOnly = true)

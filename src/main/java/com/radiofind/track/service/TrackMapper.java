@@ -15,10 +15,10 @@ public class TrackMapper {
   private static final String AUDIO_URL = "/api/tracks/%d/audio?token=%s";
 
   public TrackResponse toResponse(Track track) {
-    return toResponse(track, null);
+    return toResponse(track, null, false);
   }
 
-  public TrackResponse toResponse(Track track, String audioToken) {
+  public TrackResponse toResponse(Track track, String audioToken, boolean liked) {
     return TrackResponse.builder()
         .id(track.getId())
         .title(track.getTitle())
@@ -31,6 +31,9 @@ public class TrackMapper {
         .durationSeconds(track.getDurationSeconds())
         .coverUrl(coverUrl(track))
         .audioUrl(audioToken != null ? AUDIO_URL.formatted(track.getId(), audioToken) : null)
+        .playsCount(track.getPlaysCount())
+        .likesCount(track.getLikesCount())
+        .liked(liked)
         .createdAt(track.getCreatedAt())
         .build();
   }

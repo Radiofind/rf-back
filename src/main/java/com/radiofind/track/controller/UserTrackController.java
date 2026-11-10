@@ -2,6 +2,8 @@ package com.radiofind.track.controller;
 
 import com.radiofind.common.dto.PageResponse;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.track.dto.OwnTracksQuery;
+import com.radiofind.track.dto.OwnTracksSort;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.service.TrackService;
@@ -9,6 +11,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,8 +30,12 @@ public class UserTrackController {
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @RequestParam(required = false) TrackStatus status,
       @RequestParam(required = false) @Size(max = 150) String search,
+      @RequestParam(defaultValue = "UPLOADED") OwnTracksSort sort,
+      @RequestParam(defaultValue = "DESC") Sort.Direction direction,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size) {
-    return trackService.getOwnTracks(userDetails, status, search, page, size);
+    return trackService.getOwnTracks(
+        userDetails,
+        new OwnTracksQuery(status, search, sort, direction, page, size));
   }
 }
