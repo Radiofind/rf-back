@@ -49,13 +49,21 @@ class TrackRemovalServiceTest {
   @Test
   void deletedTrackTakesItsDataAndFilesAlong() {
     CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).build());
-    Track track = Track.builder().id(42L).audioFileName("a.wav").coverFileName("c.png").build();
+    Track track = Track.builder()
+        .id(42L)
+        .owner(ada.getUser())
+        .title("Midnight Dreams")
+        .artistName("Neon Lights")
+        .audioFileName("a.wav")
+        .coverFileName("c.png")
+        .build();
     when(ownTracks.require(ada, 42L)).thenReturn(track);
 
     trackRemovalService.delete(ada, 42L);
 
     InOrder order = inOrder(eventPublisher, trackRepository, trackFileStorageService);
-    order.verify(eventPublisher).publishEvent(new TrackDeletedEvent(42L));
+    order.verify(eventPublisher)
+        .publishEvent(new TrackDeletedEvent(42L, ada.getUser(), "Midnight Dreams", "Neon Lights"));
     order.verify(trackRepository).delete(track);
     order.verify(trackFileStorageService).deleteAudio("a.wav");
     verify(trackFileStorageService).deleteCover("c.png");

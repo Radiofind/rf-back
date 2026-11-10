@@ -56,6 +56,13 @@ public class TrackMapper {
         track.getUpdatedAt());
   }
 
+  public TrackSummaryResponse toDeletedSummary(String title, String artistName) {
+    return TrackSummaryResponse.builder()
+        .title(title)
+        .artistName(artistName)
+        .build();
+  }
+
   public TrackSummaryResponse toSummary(Track track) {
     return TrackSummaryResponse.builder()
         .id(track.getId())

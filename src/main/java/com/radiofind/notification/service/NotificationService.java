@@ -7,6 +7,7 @@ import com.radiofind.notification.entity.Notification;
 import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.notification.repository.NotificationRepository;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.event.ScheduleChangeRequestedEvent;
 import com.radiofind.track.event.TrackDeletedEvent;
@@ -62,8 +63,14 @@ public class NotificationService {
 
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
-  public void forgetDeletedTrack(TrackDeletedEvent event) {
+  public void notifyTrackDeleted(TrackDeletedEvent event) {
     notificationRepository.deleteByTrackId(event.trackId());
+    notificationRepository.save(Notification.builder()
+        .recipient(event.owner())
+        .type(NotificationType.TRACK_DELETED)
+        .trackTitle(event.title())
+        .trackArtistName(event.artistName())
+        .build());
   }
 
   @Transactional(readOnly = true)
@@ -111,7 +118,17 @@ public class NotificationService {
         .type(notification.getType())
         .read(notification.getReadAt() != null)
         .createdAt(notification.getCreatedAt())
-        .track(notification.getTrack() != null ? trackMapper.toSummary(notification.getTrack()) : null)
+        .track(trackOf(notification))
         .build();
+  }
+
+  private TrackSummaryResponse trackOf(Notification notification) {
+    if (notification.getTrack() != null) {
+      return trackMapper.toSummary(notification.getTrack());
+    }
+
+    return notification.getTrackTitle() != null
+        ? trackMapper.toDeletedSummary(notification.getTrackTitle(), notification.getTrackArtistName())
+        : null;
   }
 }

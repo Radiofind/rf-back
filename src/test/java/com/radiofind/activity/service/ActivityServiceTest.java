@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,10 +68,38 @@ class ActivityServiceTest {
   }
 
   @Test
-  void activityOfADeletedTrackIsRemoved() {
-    activityService.forgetDeletedTrack(new TrackDeletedEvent(42L));
+  void deletedTrackLeavesOnlyItsDeletionInTheActivity() {
+    User owner = User.builder().id(7L).build();
+    ArgumentCaptor<Activity> activity = ArgumentCaptor.forClass(Activity.class);
+
+    activityService.recordTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
 
     verify(activityRepository).deleteByTrackId(42L);
+    verify(activityRepository).save(activity.capture());
+    assertSame(owner, activity.getValue().getUser());
+    assertEquals(ActivityType.TRACK_DELETED, activity.getValue().getType());
+    assertEquals("Midnight Dreams", activity.getValue().getTrackTitle());
+    assertEquals("Neon Lights", activity.getValue().getTrackArtistName());
+  }
+
+  @Test
+  void deletionShowsTheTitleAndArtistTheTrackHad() {
+    Activity activity = Activity.builder()
+        .id(3L)
+        .type(ActivityType.TRACK_DELETED)
+        .trackTitle("Midnight Dreams")
+        .trackArtistName("Neon Lights")
+        .build();
+    when(activityRepository.findByUserIdOrderByCreatedAtDescIdDesc(7L, PageRequest.of(0, 10)))
+        .thenReturn(new PageImpl<>(List.of(activity), PageRequest.of(0, 10), 1));
+
+    PageResponse<ActivityResponse> page = activityService.getActivities(
+        new CustomUserDetails(User.builder().id(7L).build()), 0, 10);
+
+    ActivityResponse item = page.items().getFirst();
+    assertEquals("Midnight Dreams", item.getTrack().getTitle());
+    assertEquals("Neon Lights", item.getTrack().getArtistName());
+    assertNull(item.getTrack().getCoverUrl());
   }
 
   @Test
