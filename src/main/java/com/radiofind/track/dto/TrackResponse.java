@@ -35,5 +35,11 @@ public class TrackResponse {
 
   private String audioUrl;
 
+  private long playsCount;
+
+  private long likesCount;
+
+  private boolean liked;
+
   private Instant createdAt;
 }
