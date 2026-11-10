@@ -28,4 +28,8 @@ public interface TrackLikeRepository extends JpaRepository<TrackLike, Long> {
 
   @Query("SELECT l.track.id FROM TrackLike l WHERE l.user.id = :userId AND l.track.id IN :trackIds")
   Set<Long> findLikedTrackIds(@Param("userId") long userId, @Param("trackIds") Collection<Long> trackIds);
+
+  @Modifying
+  @Query("DELETE FROM TrackLike l WHERE l.track.id = :trackId")
+  int deleteByTrackId(@Param("trackId") long trackId);
 }

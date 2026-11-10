@@ -5,6 +5,9 @@ import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.notification.repository.NotificationRepository;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
+import com.radiofind.track.event.ScheduleChangeRequestedEvent;
+import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
 import com.radiofind.user.entity.User;
@@ -49,6 +52,42 @@ class NotificationServiceTest {
     assertSame(owner, notification.getValue().getRecipient());
     assertSame(track, notification.getValue().getTrack());
     assertEquals(NotificationType.TRACK_SUBMITTED_FOR_REVIEW, notification.getValue().getType());
+  }
+
+  @Test
+  void ownerIsToldTheSubmissionWasWithdrawn() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
+
+    service.notifySubmissionCancelled(new TrackSubmissionCancelledEvent(track));
+
+    verify(notificationRepository).save(notification.capture());
+    assertEquals(NotificationType.TRACK_SUBMISSION_CANCELLED, notification.getValue().getType());
+  }
+
+  @Test
+  void ownerIsToldTheScheduleChangeIsUnderReview() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
+
+    service.notifyScheduleChangeRequested(new ScheduleChangeRequestedEvent(track));
+
+    verify(notificationRepository).save(notification.capture());
+    assertEquals(NotificationType.SCHEDULE_CHANGE_REQUESTED, notification.getValue().getType());
+  }
+
+  @Test
+  void notificationsAboutADeletedTrackAreRemoved() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+
+    service.forgetDeletedTrack(new TrackDeletedEvent(42L));
+
+    verify(notificationRepository).deleteByTrackId(42L);
   }
 
   @Test

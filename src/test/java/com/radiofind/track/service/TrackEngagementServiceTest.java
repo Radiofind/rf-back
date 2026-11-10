@@ -2,6 +2,7 @@ package com.radiofind.track.service;
 
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
+import com.radiofind.track.entity.IllegalTrackStatusException;
 import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
@@ -9,6 +10,8 @@ import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -118,16 +121,15 @@ class TrackEngagementServiceTest {
     verify(trackRepository, never()).incrementLikes(42L);
   }
 
-  @Test
-  void trackInReviewCannotBeLiked() {
+  @ParameterizedTest
+  @EnumSource(value = TrackStatus.class, names = { "DRAFT", "PENDING_REVIEW" })
+  void unreviewedTrackCannotBeLiked(TrackStatus status) {
     when(trackRepository.findById(42L))
-        .thenReturn(Optional.of(Track.builder().id(42L).status(TrackStatus.PENDING_REVIEW).build()));
+        .thenReturn(Optional.of(Track.builder().id(42L).status(status).build()));
+    CustomUserDetails fan = new CustomUserDetails(User.builder().id(7L).build());
 
-    ResponseStatusException error = assertThrows(
-        ResponseStatusException.class,
-        () -> trackEngagementService.like(new CustomUserDetails(User.builder().id(7L).build()), 42L));
+    assertThrows(IllegalTrackStatusException.class, () -> trackEngagementService.like(fan, 42L));
 
-    assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
     verifyNoInteractions(trackLikeRepository);
   }
 

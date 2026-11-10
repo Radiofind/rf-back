@@ -6,6 +6,11 @@ import com.radiofind.activity.entity.ActivityType;
 import com.radiofind.activity.repository.ActivityRepository;
 import com.radiofind.common.dto.PageResponse;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.track.entity.Track;
+import com.radiofind.track.event.ScheduleChangeRequestedEvent;
+import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackResubmittedEvent;
+import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +31,31 @@ public class ActivityService {
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
   public void recordTrackUploaded(TrackUploadedEvent event) {
-    activityRepository.save(Activity.builder()
-        .user(event.track().getOwner())
-        .type(ActivityType.TRACK_UPLOADED)
-        .track(event.track())
-        .build());
+    record(event.track(), ActivityType.TRACK_UPLOADED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordSubmissionCancelled(TrackSubmissionCancelledEvent event) {
+    record(event.track(), ActivityType.TRACK_SUBMISSION_CANCELLED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordTrackResubmitted(TrackResubmittedEvent event) {
+    record(event.track(), ActivityType.TRACK_RESUBMITTED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordScheduleChangeRequested(ScheduleChangeRequestedEvent event) {
+    record(event.track(), ActivityType.SCHEDULE_CHANGE_REQUESTED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedTrack(TrackDeletedEvent event) {
+    activityRepository.deleteByTrackId(event.trackId());
   }
 
   @Transactional(readOnly = true)
@@ -40,6 +65,14 @@ public class ActivityService {
             userDetails.getUser().getId(),
             PageRequest.of(page, size)),
         this::toResponse);
+  }
+
+  private void record(Track track, ActivityType type) {
+    activityRepository.save(Activity.builder()
+        .user(track.getOwner())
+        .type(type)
+        .track(track)
+        .build());
   }
 
   private ActivityResponse toResponse(Activity activity) {

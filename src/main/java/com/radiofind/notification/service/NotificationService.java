@@ -7,6 +7,11 @@ import com.radiofind.notification.entity.Notification;
 import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.notification.repository.NotificationRepository;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.track.entity.Track;
+import com.radiofind.track.event.ScheduleChangeRequestedEvent;
+import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackResubmittedEvent;
+import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +39,31 @@ public class NotificationService {
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
   public void notifyTrackSubmittedForReview(TrackUploadedEvent event) {
-    notificationRepository.save(Notification.builder()
-        .recipient(event.track().getOwner())
-        .type(NotificationType.TRACK_SUBMITTED_FOR_REVIEW)
-        .track(event.track())
-        .build());
+    notify(event.track(), NotificationType.TRACK_SUBMITTED_FOR_REVIEW);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifySubmissionCancelled(TrackSubmissionCancelledEvent event) {
+    notify(event.track(), NotificationType.TRACK_SUBMISSION_CANCELLED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyTrackResubmitted(TrackResubmittedEvent event) {
+    notify(event.track(), NotificationType.TRACK_RESUBMITTED_FOR_REVIEW);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyScheduleChangeRequested(ScheduleChangeRequestedEvent event) {
+    notify(event.track(), NotificationType.SCHEDULE_CHANGE_REQUESTED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedTrack(TrackDeletedEvent event) {
+    notificationRepository.deleteByTrackId(event.trackId());
   }
 
   @Transactional(readOnly = true)
@@ -70,6 +95,14 @@ public class NotificationService {
   @Transactional
   public void markAllAsRead(CustomUserDetails userDetails) {
     notificationRepository.markAllAsRead(userDetails.getUser().getId(), Instant.now(clock));
+  }
+
+  private void notify(Track track, NotificationType type) {
+    notificationRepository.save(Notification.builder()
+        .recipient(track.getOwner())
+        .type(type)
+        .track(track)
+        .build());
   }
 
   private NotificationResponse toResponse(Notification notification) {
