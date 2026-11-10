@@ -96,6 +96,9 @@ class TrackServiceTest {
   @Mock
   private TrackReviewFlagRepository trackReviewFlagRepository;
 
+  @Mock
+  private AudioStreamTokens audioStreamTokens;
+
   @Spy
   private TrackMapper trackMapper = new TrackMapper();
 
@@ -283,6 +286,7 @@ class TrackServiceTest {
     ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
     when(trackRepository.findAll(ArgumentMatchers.<Specification<Track>>any(), pageable.capture()))
         .thenAnswer(invocation -> new PageImpl<>(List.of(track), invocation.getArgument(1), 8));
+    when(audioStreamTokens.issue(42L)).thenReturn("signed");
 
     PageResponse<TrackResponse> uploads = trackService.getOwnTracks(new CustomUserDetails(owner), null, null, 1, 7);
 
@@ -293,6 +297,30 @@ class TrackServiceTest {
     assertEquals(List.of("AMBIENT"), upload.getGenres());
     assertEquals(TrackStatus.PENDING_REVIEW, upload.getStatus());
     assertEquals(Instant.parse("2025-04-28T14:32:00Z"), upload.getCreatedAt());
+    assertEquals("/api/tracks/42/audio?token=signed", upload.getAudioUrl());
+  }
+
+  @Test
+  void audioIsServedInItsFormatToTheHolderOfItsToken() {
+    Track track = Track.builder().id(42L).audioFileName("a.flac").audioFormat(AudioType.FLAC).build();
+    when(audioStreamTokens.grants("signed", 42L)).thenReturn(true);
+    when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
+    when(trackFileStorageService.getAudioPath("a.flac")).thenReturn(Path.of("/audio/a.flac"));
+
+    TrackAudio audio = trackService.getAudio(42L, "signed");
+
+    assertEquals(new TrackAudio(Path.of("/audio/a.flac"), AudioType.FLAC.getMediaType()), audio);
+  }
+
+  @Test
+  void audioIsForbiddenWithoutAValidToken() {
+    when(audioStreamTokens.grants("forged", 42L)).thenReturn(false);
+
+    ResponseStatusException error = assertThrows(
+        ResponseStatusException.class, () -> trackService.getAudio(42L, "forged"));
+
+    assertEquals(HttpStatus.FORBIDDEN, error.getStatusCode());
+    verifyNoInteractions(trackRepository);
   }
 
   @Test

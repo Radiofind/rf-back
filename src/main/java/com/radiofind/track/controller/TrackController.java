@@ -3,6 +3,7 @@ package com.radiofind.track.controller;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.UploadTrackRequest;
+import com.radiofind.track.service.TrackAudio;
 import com.radiofind.track.service.TrackCover;
 import com.radiofind.track.service.TrackService;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +40,15 @@ public class TrackController {
       @RequestPart("audio") MultipartFile audio,
       @RequestPart(value = "cover", required = false) MultipartFile cover) {
     return trackService.upload(userDetails, request, audio, cover);
+  }
+
+  @GetMapping("/{trackId}/audio")
+  public ResponseEntity<Resource> getAudio(@PathVariable Long trackId, @RequestParam String token) {
+    TrackAudio audio = trackService.getAudio(trackId, token);
+
+    return ResponseEntity.ok()
+        .contentType(audio.mediaType())
+        .body(new FileSystemResource(audio.path()));
   }
 
   @GetMapping("/{trackId}/cover")
