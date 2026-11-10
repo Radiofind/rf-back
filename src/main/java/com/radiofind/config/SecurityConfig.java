@@ -33,7 +33,7 @@ public class SecurityConfig {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/tracks/*/cover").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/tracks/*/cover", "/api/tracks/*/audio").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

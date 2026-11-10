@@ -8,6 +8,7 @@ import com.radiofind.security.JwtService;
 import com.radiofind.storage.service.TestImages;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.UploadTrackRequest;
+import com.radiofind.track.service.TrackAudio;
 import com.radiofind.track.service.TrackCover;
 import com.radiofind.track.service.TrackService;
 import com.radiofind.user.entity.Role;
@@ -89,6 +90,16 @@ class TrackControllerTest {
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.IMAGE_PNG))
         .andExpect(content().bytes(TestImages.PNG));
+  }
+
+  @Test
+  void audioIsStreamedWithoutLoginInTheRequestedByteRange() throws Exception {
+    Path audio = Files.write(coversPath.resolve("a.mp3"), new byte[] { 1, 2, 3, 4, 5 });
+    when(trackService.getAudio(42L, "signed")).thenReturn(new TrackAudio(audio, MediaType.parseMediaType("audio/mpeg")));
+
+    mockMvc.perform(get("/api/tracks/42/audio").param("token", "signed").header("Range", "bytes=1-2"))
+        .andExpect(status().isPartialContent())
+        .andExpect(content().bytes(new byte[] { 2, 3 }));
   }
 
   @Test
