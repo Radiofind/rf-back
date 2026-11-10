@@ -1,5 +1,6 @@
 package com.radiofind.track.service;
 
+import com.radiofind.track.dto.TrackDetailsResponse;
 import com.radiofind.track.dto.TrackResponse;
 import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
@@ -36,6 +37,23 @@ public class TrackMapper {
         .liked(liked)
         .createdAt(track.getCreatedAt())
         .build();
+  }
+
+  public TrackDetailsResponse toDetails(Track track) {
+    return new TrackDetailsResponse(
+        track.getId(),
+        track.getTitle(),
+        track.getArtistName(),
+        (track.getOwner().getName() + " " + track.getOwner().getSurname()).trim(),
+        List.copyOf(track.getGenres()),
+        track.getDescription(),
+        track.getStatus(),
+        track.getDurationSeconds(),
+        track.getAudioFormat(),
+        track.getAudioSizeBytes(),
+        coverUrl(track),
+        track.getCreatedAt(),
+        track.getUpdatedAt());
   }
 
   public TrackSummaryResponse toSummary(Track track) {

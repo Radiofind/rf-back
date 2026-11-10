@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public interface TrackListenRepository extends JpaRepository<TrackListen, Long> {
 
@@ -19,4 +20,15 @@ public interface TrackListenRepository extends JpaRepository<TrackListen, Long> 
       @Param("trackId") long trackId,
       @Param("listenerId") long listenerId,
       @Param("createdAt") Instant createdAt);
+
+  @Modifying
+  @Query("DELETE FROM TrackListen l WHERE l.track.id = :trackId")
+  int deleteByTrackId(@Param("trackId") long trackId);
+
+  long countByTrackId(Long trackId);
+
+  long countByTrackIdAndCreatedAtAfter(Long trackId, Instant since);
+
+  @Query("SELECT MAX(l.createdAt) FROM TrackListen l WHERE l.track.id = :trackId")
+  Optional<Instant> findLastListenedAt(@Param("trackId") long trackId);
 }

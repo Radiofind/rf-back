@@ -7,6 +7,8 @@ import com.radiofind.activity.repository.ActivityRepository;
 import com.radiofind.common.dto.PageResponse;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
+import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackResubmittedEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
 import com.radiofind.user.entity.User;
@@ -51,6 +53,24 @@ class ActivityServiceTest {
     assertSame(owner, activity.getValue().getUser());
     assertSame(track, activity.getValue().getTrack());
     assertEquals(ActivityType.TRACK_UPLOADED, activity.getValue().getType());
+  }
+
+  @Test
+  void resubmittedTrackAppearsInTheOwnersActivity() {
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    ArgumentCaptor<Activity> activity = ArgumentCaptor.forClass(Activity.class);
+
+    activityService.recordTrackResubmitted(new TrackResubmittedEvent(track));
+
+    verify(activityRepository).save(activity.capture());
+    assertEquals(ActivityType.TRACK_RESUBMITTED, activity.getValue().getType());
+  }
+
+  @Test
+  void activityOfADeletedTrackIsRemoved() {
+    activityService.forgetDeletedTrack(new TrackDeletedEvent(42L));
+
+    verify(activityRepository).deleteByTrackId(42L);
   }
 
   @Test

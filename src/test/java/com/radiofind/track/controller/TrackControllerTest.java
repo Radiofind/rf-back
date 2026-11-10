@@ -38,6 +38,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -95,11 +96,26 @@ class TrackControllerTest {
   @Test
   void audioIsStreamedWithoutLoginInTheRequestedByteRange() throws Exception {
     Path audio = Files.write(coversPath.resolve("a.mp3"), new byte[] { 1, 2, 3, 4, 5 });
-    when(trackService.getAudio(42L, "signed")).thenReturn(new TrackAudio(audio, MediaType.parseMediaType("audio/mpeg")));
+    when(trackService.getAudio(42L, "signed"))
+        .thenReturn(new TrackAudio(audio, MediaType.parseMediaType("audio/mpeg"), "Neon - Midnight.mp3"));
 
     mockMvc.perform(get("/api/tracks/42/audio").param("token", "signed").header("Range", "bytes=1-2"))
         .andExpect(status().isPartialContent())
         .andExpect(content().bytes(new byte[] { 2, 3 }));
+  }
+
+  @Test
+  void downloadedAudioIsSavedUnderArtistAndTitle() throws Exception {
+    Path audio = Files.write(coversPath.resolve("a.mp3"), new byte[] { 1 });
+    when(trackService.getAudio(42L, "signed"))
+        .thenReturn(new TrackAudio(audio, MediaType.parseMediaType("audio/mpeg"), "Neon Lights - Midnight Dreams.mp3"));
+
+    mockMvc.perform(get("/api/tracks/42/audio").param("token", "signed").param("download", "true"))
+        .andExpect(status().isOk())
+        .andExpect(header().string(
+            "Content-Disposition",
+            "attachment; filename=\"=?UTF-8?Q?Neon_Lights_-_Midnight_Dreams.mp3?=\"; "
+                + "filename*=UTF-8''Neon%20Lights%20-%20Midnight%20Dreams.mp3"));
   }
 
   @Test

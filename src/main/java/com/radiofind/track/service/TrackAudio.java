@@ -4,5 +4,5 @@ import org.springframework.http.MediaType;
 
 import java.nio.file.Path;
 
-public record TrackAudio(Path path, MediaType mediaType) {
+public record TrackAudio(Path path, MediaType mediaType, String downloadName) {
 }

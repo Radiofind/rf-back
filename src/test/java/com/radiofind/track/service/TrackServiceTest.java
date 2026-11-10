@@ -83,8 +83,10 @@ class TrackServiceTest {
   @Mock
   private TrackFileStorageService trackFileStorageService;
 
-  @Mock
-  private GenreCatalog genreCatalog;
+  private final GenreCatalog genreCatalog = mock(GenreCatalog.class);
+
+  @Spy
+  private TrackInputValidator trackInputValidator = new TrackInputValidator(genreCatalog);
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
@@ -331,14 +333,22 @@ class TrackServiceTest {
 
   @Test
   void audioIsServedInItsFormatToTheHolderOfItsToken() {
-    Track track = Track.builder().id(42L).audioFileName("a.flac").audioFormat(AudioType.FLAC).build();
+    Track track = Track.builder()
+        .id(42L)
+        .title("Midnight Dreams")
+        .artistName("Neon Lights")
+        .audioFileName("a.flac")
+        .audioFormat(AudioType.FLAC)
+        .build();
     when(audioStreamTokens.grants("signed", 42L)).thenReturn(true);
     when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
     when(trackFileStorageService.getAudioPath("a.flac")).thenReturn(Path.of("/audio/a.flac"));
 
     TrackAudio audio = trackService.getAudio(42L, "signed");
 
-    assertEquals(new TrackAudio(Path.of("/audio/a.flac"), AudioType.FLAC.getMediaType()), audio);
+    assertEquals(
+        new TrackAudio(Path.of("/audio/a.flac"), AudioType.FLAC.getMediaType(), "Neon Lights - Midnight Dreams.flac"),
+        audio);
   }
 
   @Test

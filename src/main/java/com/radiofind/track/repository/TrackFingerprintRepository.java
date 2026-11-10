@@ -1,5 +1,6 @@
 package com.radiofind.track.repository;
 
+import org.springframework.data.jpa.repository.Modifying;
 import com.radiofind.track.entity.TrackFingerprint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,4 +17,8 @@ public interface TrackFingerprintRepository extends JpaRepository<TrackFingerpri
   List<TrackFingerprint> findWithDurationBetween(
       @Param("minDuration") int minDuration,
       @Param("maxDuration") int maxDuration);
+
+  @Modifying
+  @Query("DELETE FROM TrackFingerprint f WHERE f.track.id = :trackId")
+  int deleteByTrackId(@Param("trackId") long trackId);
 }

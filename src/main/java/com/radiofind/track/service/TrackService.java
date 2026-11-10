@@ -2,7 +2,6 @@ package com.radiofind.track.service;
 
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.common.dto.PageResponse;
-import com.radiofind.genre.service.GenreCatalog;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.AudioType;
 import com.radiofind.storage.service.ImageType;
@@ -41,7 +40,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -50,17 +48,13 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TrackService {
 
-  private static final long MAX_AUDIO_SIZE = 100L * 1024 * 1024;
-
-  private static final long MAX_COVER_SIZE = 10L * 1024 * 1024;
-
   private final TrackRepository trackRepository;
 
   private final UserRepository userRepository;
 
   private final TrackFileStorageService trackFileStorageService;
 
-  private final GenreCatalog genreCatalog;
+  private final TrackInputValidator trackInputValidator;
 
   private final TrackMapper trackMapper;
 
@@ -86,10 +80,9 @@ public class TrackService {
       MultipartFile audio,
       MultipartFile cover) {
 
-    AudioType audioType = validateAudio(audio);
-    ImageType coverType = validateCover(cover);
-    List<String> genres = request.getGenres().stream().map(String::trim).toList();
-    validateGenres(genres);
+    AudioType audioType = trackInputValidator.validateAudio(audio);
+    ImageType coverType = trackInputValidator.validateCover(cover);
+    List<String> genres = trackInputValidator.validateGenres(request.getGenres());
 
     String audioFileName = trackFileStorageService.saveAudio(audio, audioType);
     String coverFileName = null;
@@ -157,7 +150,8 @@ public class TrackService {
 
     return new TrackAudio(
         trackFileStorageService.getAudioPath(track.getAudioFileName()),
-        track.getAudioFormat().getMediaType());
+        track.getAudioFormat().getMediaType(),
+        "%s - %s%s".formatted(track.getArtistName(), track.getTitle(), track.getAudioFormat().getExtension()));
   }
 
   @Transactional(readOnly = true)
@@ -222,46 +216,6 @@ public class TrackService {
     return artistName != null
         ? artistName
         : (owner.getName() + " " + owner.getSurname()).trim();
-  }
-
-  private AudioType validateAudio(MultipartFile audio) {
-    if (audio == null || audio.isEmpty()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Audio file is empty");
-    }
-
-    if (audio.getSize() > MAX_AUDIO_SIZE) {
-      throw new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE, "Audio file must not exceed 100 MB");
-    }
-
-    return AudioType.detect(audio)
-        .orElseThrow(() -> new ResponseStatusException(
-            HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-            "Only MP3, WAV and FLAC audio files are allowed"));
-  }
-
-  private ImageType validateCover(MultipartFile cover) {
-    if (cover == null || cover.isEmpty()) {
-      return null;
-    }
-
-    if (cover.getSize() > MAX_COVER_SIZE) {
-      throw new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE, "Cover image must not exceed 10 MB");
-    }
-
-    return ImageType.detect(cover)
-        .orElseThrow(() -> new ResponseStatusException(
-            HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-            "Only JPEG, PNG and WebP cover images are allowed"));
-  }
-
-  private void validateGenres(List<String> genres) {
-    if (!genres.stream().allMatch(genreCatalog::isGenre)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown genre");
-    }
-
-    if (new HashSet<>(genres).size() != genres.size()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Genres must not repeat");
-    }
   }
 
   private String normalizeNullableText(String value) {
