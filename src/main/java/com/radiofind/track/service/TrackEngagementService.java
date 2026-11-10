@@ -1,8 +1,11 @@
 package com.radiofind.track.service;
 
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.context.event.EventListener;
+import com.radiofind.track.event.TrackDeletedEvent;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
-import com.radiofind.track.entity.TrackStatus;
+import com.radiofind.track.entity.IllegalTrackStatusException;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
 import com.radiofind.track.repository.TrackRepository;
@@ -44,8 +47,8 @@ public class TrackEngagementService {
   public void like(CustomUserDetails userDetails, Long trackId) {
     Track track = findTrack(trackId);
 
-    if (track.getStatus() == TrackStatus.PENDING_REVIEW) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Track in review cannot be liked");
+    if (!track.acceptsLikes()) {
+      throw new IllegalTrackStatusException("liked", track.getStatus());
     }
 
     if (trackLikeRepository.insertIfAbsent(trackId, userDetails.getUser().getId(), clock.instant()) > 0) {
@@ -60,6 +63,13 @@ public class TrackEngagementService {
     if (trackLikeRepository.deleteByTrackAndUser(trackId, userDetails.getUser().getId()) > 0) {
       trackRepository.decrementLikes(trackId);
     }
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedTrack(TrackDeletedEvent event) {
+    trackLikeRepository.deleteByTrackId(event.trackId());
+    trackListenRepository.deleteByTrackId(event.trackId());
   }
 
   private Track findTrack(Long trackId) {

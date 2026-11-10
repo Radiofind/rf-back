@@ -87,4 +87,36 @@ public class Track {
   @UpdateTimestamp
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
+
+  public void cancelSubmission() {
+    if (status != TrackStatus.PENDING_REVIEW) {
+      throw new IllegalTrackStatusException("withdrawn from review", status);
+    }
+
+    status = TrackStatus.DRAFT;
+  }
+
+  public void submitForReview() {
+    if (status != TrackStatus.DRAFT && status != TrackStatus.REJECTED) {
+      throw new IllegalTrackStatusException("submitted for review", status);
+    }
+
+    status = TrackStatus.PENDING_REVIEW;
+  }
+
+  public void requireEditable() {
+    if (status == TrackStatus.APPROVED) {
+      throw new IllegalTrackStatusException("edited", status);
+    }
+  }
+
+  public void requireStatus(TrackStatus required, String action) {
+    if (status != required) {
+      throw new IllegalTrackStatusException(action, status);
+    }
+  }
+
+  public boolean acceptsLikes() {
+    return status == TrackStatus.APPROVED || status == TrackStatus.REJECTED;
+  }
 }

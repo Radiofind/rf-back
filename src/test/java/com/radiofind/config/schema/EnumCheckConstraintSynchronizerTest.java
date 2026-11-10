@@ -21,7 +21,7 @@ class EnumCheckConstraintSynchronizerTest {
 
     new EnumCheckConstraintSynchronizer(jdbcTemplate, mock(EntityManagerFactory.class)).synchronize();
 
-    verify(jdbcTemplate, times(9)).execute(sql.capture());
+    verify(jdbcTemplate, times(10)).execute(sql.capture());
     assertEquals(
         List.of(
             "ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_language_check, "
@@ -38,19 +38,24 @@ class EnumCheckConstraintSynchronizerTest {
                 + "CHECK (accent_color IN ('VIOLET', 'OCEAN', 'ORCHID', 'PLUM'))",
             "ALTER TABLE tracks DROP CONSTRAINT IF EXISTS tracks_status_check, "
                 + "ADD CONSTRAINT tracks_status_check "
-                + "CHECK (status IN ('PENDING_REVIEW', 'APPROVED', 'REJECTED'))",
+                + "CHECK (status IN ('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'))",
             "ALTER TABLE tracks DROP CONSTRAINT IF EXISTS tracks_audio_format_check, "
                 + "ADD CONSTRAINT tracks_audio_format_check "
                 + "CHECK (audio_format IN ('MP3', 'WAV', 'FLAC'))",
             "ALTER TABLE activities DROP CONSTRAINT IF EXISTS activities_type_check, "
                 + "ADD CONSTRAINT activities_type_check "
-                + "CHECK (type IN ('TRACK_UPLOADED'))",
+                + "CHECK (type IN ('TRACK_UPLOADED', 'TRACK_SUBMISSION_CANCELLED', 'TRACK_RESUBMITTED', "
+                + "'SCHEDULE_CHANGE_REQUESTED'))",
             "ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check, "
                 + "ADD CONSTRAINT notifications_type_check "
-                + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW'))",
+                + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW', 'TRACK_SUBMISSION_CANCELLED', "
+                + "'TRACK_RESUBMITTED_FOR_REVIEW', 'SCHEDULE_CHANGE_REQUESTED'))",
             "ALTER TABLE track_review_flags DROP CONSTRAINT IF EXISTS track_review_flags_type_check, "
                 + "ADD CONSTRAINT track_review_flags_type_check "
-                + "CHECK (type IN ('MATCHES_OTHER_USERS_TRACK', 'RESEMBLES_OWN_TRACK', 'REUPLOAD_OF_REJECTED_TRACK'))"),
+                + "CHECK (type IN ('MATCHES_OTHER_USERS_TRACK', 'RESEMBLES_OWN_TRACK', 'REUPLOAD_OF_REJECTED_TRACK'))",
+            "ALTER TABLE schedule_change_requests DROP CONSTRAINT IF EXISTS schedule_change_requests_status_check, "
+                + "ADD CONSTRAINT schedule_change_requests_status_check "
+                + "CHECK (status IN ('PENDING', 'APPROVED', 'DECLINED'))"),
         sql.getAllValues());
   }
 }

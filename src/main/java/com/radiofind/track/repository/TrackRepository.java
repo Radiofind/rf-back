@@ -7,9 +7,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface TrackRepository extends JpaRepository<Track, Long>, JpaSpecificationExecutor<Track> {
 
   long countByOwnerId(Long ownerId);
+
+  Optional<Track> findByIdAndOwnerId(Long id, Long ownerId);
 
   @Query(value = "SELECT 1 FROM pg_advisory_xact_lock(:ownerId)", nativeQuery = true)
   int lockUploadsOf(@Param("ownerId") long ownerId);

@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/tracks")
@@ -43,12 +47,21 @@ public class TrackController {
   }
 
   @GetMapping("/{trackId}/audio")
-  public ResponseEntity<Resource> getAudio(@PathVariable Long trackId, @RequestParam String token) {
+  public ResponseEntity<Resource> getAudio(
+      @PathVariable Long trackId,
+      @RequestParam String token,
+      @RequestParam(defaultValue = "false") boolean download) {
     TrackAudio audio = trackService.getAudio(trackId, token);
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok().contentType(audio.mediaType());
 
-    return ResponseEntity.ok()
-        .contentType(audio.mediaType())
-        .body(new FileSystemResource(audio.path()));
+    if (download) {
+      response.header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+          .filename(audio.downloadName(), StandardCharsets.UTF_8)
+          .build()
+          .toString());
+    }
+
+    return response.body(new FileSystemResource(audio.path()));
   }
 
   @GetMapping("/{trackId}/cover")

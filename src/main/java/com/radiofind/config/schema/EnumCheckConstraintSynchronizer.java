@@ -9,6 +9,7 @@ import com.radiofind.settings.entity.ProfileVisibility;
 import com.radiofind.storage.service.AudioType;
 import com.radiofind.track.entity.TrackReviewFlagType;
 import com.radiofind.track.entity.TrackStatus;
+import com.radiofind.track.schedule.ScheduleChangeRequestStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,8 @@ public class EnumCheckConstraintSynchronizer {
       new EnumColumn("tracks", "audio_format", AudioType.class),
       new EnumColumn("activities", "type", ActivityType.class),
       new EnumColumn("notifications", "type", NotificationType.class),
-      new EnumColumn("track_review_flags", "type", TrackReviewFlagType.class));
+      new EnumColumn("track_review_flags", "type", TrackReviewFlagType.class),
+      new EnumColumn("schedule_change_requests", "status", ScheduleChangeRequestStatus.class));
 
   private final JdbcTemplate jdbcTemplate;
 
