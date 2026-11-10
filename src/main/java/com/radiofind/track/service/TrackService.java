@@ -1,6 +1,7 @@
 package com.radiofind.track.service;
 
 import com.radiofind.artist.entity.ArtistProfile;
+import com.radiofind.common.dto.PageResponse;
 import com.radiofind.genre.service.GenreCatalog;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.AudioType;
@@ -21,10 +22,14 @@ import com.radiofind.track.fingerprint.UnreadableAudioException;
 import com.radiofind.track.repository.TrackFingerprintRepository;
 import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.track.repository.TrackReviewFlagRepository;
+import com.radiofind.track.repository.TrackSpecifications;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -45,6 +50,8 @@ public class TrackService {
   private static final long MAX_AUDIO_SIZE = 100L * 1024 * 1024;
 
   private static final long MAX_COVER_SIZE = 10L * 1024 * 1024;
+
+  private static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 
   private final TrackRepository trackRepository;
 
@@ -112,6 +119,23 @@ public class TrackService {
     }
 
     return trackMapper.toResponse(track);
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<TrackResponse> getOwnTracks(
+      CustomUserDetails userDetails,
+      TrackStatus status,
+      String search,
+      int page,
+      int size) {
+    Specification<Track> filter = Specification.allOf(
+        TrackSpecifications.ownedBy(userDetails.getUser().getId()),
+        TrackSpecifications.inStatus(status),
+        TrackSpecifications.titleOrArtistContains(search));
+
+    return PageResponse.of(
+        trackRepository.findAll(filter, PageRequest.of(page, size, NEWEST_FIRST)),
+        trackMapper::toResponse);
   }
 
   @Transactional(readOnly = true)
