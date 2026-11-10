@@ -4,6 +4,7 @@ import com.radiofind.storage.service.AudioType;
 import com.radiofind.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -38,6 +39,7 @@ public class Track {
   private String artistName;
 
   @ElementCollection
+  @BatchSize(size = 50)
   @CollectionTable(name = "track_genres", joinColumns = @JoinColumn(name = "track_id"))
   @OrderColumn(name = "position")
   @Column(name = "genre", nullable = false, length = 100)
