@@ -35,6 +35,12 @@ public class Activity {
   @JoinColumn(name = "track_id")
   private Track track;
 
+  @Column(name = "track_title", length = 150)
+  private String trackTitle;
+
+  @Column(name = "track_artist_name")
+  private String trackArtistName;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
