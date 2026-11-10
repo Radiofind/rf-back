@@ -36,6 +36,12 @@ public class Notification {
   @JoinColumn(name = "track_id")
   private Track track;
 
+  @Column(name = "track_title", length = 150)
+  private String trackTitle;
+
+  @Column(name = "track_artist_name")
+  private String trackArtistName;
+
   @Column(name = "read_at")
   private Instant readAt;
 

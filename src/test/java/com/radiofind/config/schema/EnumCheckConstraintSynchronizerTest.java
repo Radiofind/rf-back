@@ -45,11 +45,11 @@ class EnumCheckConstraintSynchronizerTest {
             "ALTER TABLE activities DROP CONSTRAINT IF EXISTS activities_type_check, "
                 + "ADD CONSTRAINT activities_type_check "
                 + "CHECK (type IN ('TRACK_UPLOADED', 'TRACK_SUBMISSION_CANCELLED', 'TRACK_RESUBMITTED', "
-                + "'SCHEDULE_CHANGE_REQUESTED'))",
+                + "'SCHEDULE_CHANGE_REQUESTED', 'TRACK_DELETED'))",
             "ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check, "
                 + "ADD CONSTRAINT notifications_type_check "
                 + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW', 'TRACK_SUBMISSION_CANCELLED', "
-                + "'TRACK_RESUBMITTED_FOR_REVIEW', 'SCHEDULE_CHANGE_REQUESTED'))",
+                + "'TRACK_RESUBMITTED_FOR_REVIEW', 'SCHEDULE_CHANGE_REQUESTED', 'TRACK_DELETED'))",
             "ALTER TABLE track_review_flags DROP CONSTRAINT IF EXISTS track_review_flags_type_check, "
                 + "ADD CONSTRAINT track_review_flags_type_check "
                 + "CHECK (type IN ('MATCHES_OTHER_USERS_TRACK', 'RESEMBLES_OWN_TRACK', 'REUPLOAD_OF_REJECTED_TRACK'))",

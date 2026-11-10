@@ -6,6 +6,7 @@ import com.radiofind.activity.entity.ActivityType;
 import com.radiofind.activity.repository.ActivityRepository;
 import com.radiofind.common.dto.PageResponse;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.event.ScheduleChangeRequestedEvent;
 import com.radiofind.track.event.TrackDeletedEvent;
@@ -54,8 +55,14 @@ public class ActivityService {
 
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
-  public void forgetDeletedTrack(TrackDeletedEvent event) {
+  public void recordTrackDeleted(TrackDeletedEvent event) {
     activityRepository.deleteByTrackId(event.trackId());
+    activityRepository.save(Activity.builder()
+        .user(event.owner())
+        .type(ActivityType.TRACK_DELETED)
+        .trackTitle(event.title())
+        .trackArtistName(event.artistName())
+        .build());
   }
 
   @Transactional(readOnly = true)
@@ -80,7 +87,17 @@ public class ActivityService {
         .id(activity.getId())
         .type(activity.getType())
         .createdAt(activity.getCreatedAt())
-        .track(activity.getTrack() != null ? trackMapper.toSummary(activity.getTrack()) : null)
+        .track(trackOf(activity))
         .build();
+  }
+
+  private TrackSummaryResponse trackOf(Activity activity) {
+    if (activity.getTrack() != null) {
+      return trackMapper.toSummary(activity.getTrack());
+    }
+
+    return activity.getTrackTitle() != null
+        ? trackMapper.toDeletedSummary(activity.getTrackTitle(), activity.getTrackArtistName())
+        : null;
   }
 }

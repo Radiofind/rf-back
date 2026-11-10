@@ -39,7 +39,7 @@ public class TrackRemovalService {
   private Track remove(CustomUserDetails userDetails, Long trackId) {
     Track track = ownTracks.require(userDetails, trackId);
 
-    eventPublisher.publishEvent(new TrackDeletedEvent(track.getId()));
+    eventPublisher.publishEvent(TrackDeletedEvent.of(track));
     trackRepository.delete(track);
 
     return track;

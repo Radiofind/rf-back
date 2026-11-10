@@ -81,13 +81,19 @@ class NotificationServiceTest {
   }
 
   @Test
-  void notificationsAboutADeletedTrackAreRemoved() {
+  void ownerIsToldTheTrackWasDeletedInsteadOfItsEarlierNotifications() {
     NotificationService service = new NotificationService(
         notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+    User owner = User.builder().id(7L).build();
+    ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
-    service.forgetDeletedTrack(new TrackDeletedEvent(42L));
+    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
 
     verify(notificationRepository).deleteByTrackId(42L);
+    verify(notificationRepository).save(notification.capture());
+    assertSame(owner, notification.getValue().getRecipient());
+    assertEquals(NotificationType.TRACK_DELETED, notification.getValue().getType());
+    assertEquals("Midnight Dreams", notification.getValue().getTrackTitle());
   }
 
   @Test
