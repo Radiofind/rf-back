@@ -41,5 +41,9 @@ public class TrackResponse {
 
   private boolean liked;
 
+  private boolean own;
+
   private Instant createdAt;
+
+  private Instant likedAt;
 }
