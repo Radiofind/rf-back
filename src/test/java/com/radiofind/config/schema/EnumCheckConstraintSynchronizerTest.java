@@ -21,7 +21,7 @@ class EnumCheckConstraintSynchronizerTest {
 
     new EnumCheckConstraintSynchronizer(jdbcTemplate, mock(EntityManagerFactory.class)).synchronize();
 
-    verify(jdbcTemplate, times(10)).execute(sql.capture());
+    verify(jdbcTemplate, times(12)).execute(sql.capture());
     assertEquals(
         List.of(
             "ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_language_check, "
@@ -49,13 +49,20 @@ class EnumCheckConstraintSynchronizerTest {
             "ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check, "
                 + "ADD CONSTRAINT notifications_type_check "
                 + "CHECK (type IN ('TRACK_SUBMITTED_FOR_REVIEW', 'TRACK_SUBMISSION_CANCELLED', "
-                + "'TRACK_RESUBMITTED_FOR_REVIEW', 'SCHEDULE_CHANGE_REQUESTED', 'TRACK_DELETED'))",
+                + "'TRACK_RESUBMITTED_FOR_REVIEW', 'SCHEDULE_CHANGE_REQUESTED', 'TRACK_DELETED', 'TRACK_REPORTED'))",
             "ALTER TABLE track_review_flags DROP CONSTRAINT IF EXISTS track_review_flags_type_check, "
                 + "ADD CONSTRAINT track_review_flags_type_check "
                 + "CHECK (type IN ('MATCHES_OTHER_USERS_TRACK', 'RESEMBLES_OWN_TRACK', 'REUPLOAD_OF_REJECTED_TRACK'))",
             "ALTER TABLE schedule_change_requests DROP CONSTRAINT IF EXISTS schedule_change_requests_status_check, "
                 + "ADD CONSTRAINT schedule_change_requests_status_check "
-                + "CHECK (status IN ('PENDING', 'APPROVED', 'DECLINED'))"),
+                + "CHECK (status IN ('PENDING', 'APPROVED', 'DECLINED'))",
+            "ALTER TABLE track_reports DROP CONSTRAINT IF EXISTS track_reports_reason_check, "
+                + "ADD CONSTRAINT track_reports_reason_check "
+                + "CHECK (reason IN ('COPYRIGHT_INFRINGEMENT', 'OFFENSIVE_CONTENT', 'SPAM', "
+                + "'MISLEADING_INFORMATION', 'POOR_AUDIO_QUALITY', 'OTHER'))",
+            "ALTER TABLE track_reports DROP CONSTRAINT IF EXISTS track_reports_status_check, "
+                + "ADD CONSTRAINT track_reports_status_check "
+                + "CHECK (status IN ('OPEN', 'RESOLVED', 'DISMISSED'))"),
         sql.getAllValues());
   }
 }
