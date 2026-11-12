@@ -1,6 +1,7 @@
 package com.radiofind.notification.repository;
 
 import com.radiofind.notification.entity.Notification;
+import com.radiofind.notification.entity.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -19,6 +20,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
   long countByRecipientIdAndReadAtIsNull(Long recipientId);
 
+  boolean existsByRecipientIdAndTrackIdAndTypeAndReadAtIsNull(Long recipientId, Long trackId, NotificationType type);
+
   Optional<Notification> findByIdAndRecipientId(Long id, Long recipientId);
 
   @Modifying
@@ -28,4 +31,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
   @Modifying
   @Query("DELETE FROM Notification n WHERE n.track.id = :trackId")
   int deleteByTrackId(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("DELETE FROM Notification n WHERE n.recipient.id = :recipientId")
+  int deleteByRecipientId(@Param("recipientId") long recipientId);
 }

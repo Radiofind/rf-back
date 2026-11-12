@@ -1,12 +1,15 @@
 package com.radiofind.notification.service;
 
 import com.radiofind.notification.entity.Notification;
+import com.radiofind.notification.entity.NotificationCategory;
 import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.notification.repository.NotificationRepository;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.settings.service.SettingsService;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.event.ScheduleChangeRequestedEvent;
 import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackLikedEvent;
 import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
@@ -27,6 +30,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,12 +43,16 @@ class NotificationServiceTest {
   @Mock
   private NotificationRepository notificationRepository;
 
+  @Mock
+  private SettingsService settingsService;
+
   @Test
   void ownerIsToldTheUploadedTrackWentToReview() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     User owner = User.builder().id(7L).build();
     Track track = Track.builder().id(42L).owner(owner).build();
+    when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(true);
     ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
     service.notifyTrackSubmittedForReview(new TrackUploadedEvent(track));
@@ -57,8 +66,9 @@ class NotificationServiceTest {
   @Test
   void ownerIsToldTheSubmissionWasWithdrawn() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(true);
     ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
     service.notifySubmissionCancelled(new TrackSubmissionCancelledEvent(track));
@@ -70,8 +80,9 @@ class NotificationServiceTest {
   @Test
   void ownerIsToldTheScheduleChangeIsUnderReview() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    when(settingsService.receives(7L, NotificationCategory.RADIO_UPDATES)).thenReturn(true);
     ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
     service.notifyScheduleChangeRequested(new ScheduleChangeRequestedEvent(track));
@@ -83,8 +94,9 @@ class NotificationServiceTest {
   @Test
   void ownerIsToldTheTrackWasDeletedInsteadOfItsEarlierNotifications() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     User owner = User.builder().id(7L).build();
+    when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(true);
     ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
     service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
@@ -99,7 +111,7 @@ class NotificationServiceTest {
   @Test
   void notificationOfAnotherUserCannotBeMarkedAsRead() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     when(notificationRepository.findByIdAndRecipientId(5L, 7L)).thenReturn(Optional.empty());
 
     ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -111,7 +123,7 @@ class NotificationServiceTest {
   @Test
   void markingAsReadAgainKeepsTheFirstReadTime() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     Instant firstRead = Instant.parse("2026-11-01T08:00:00Z");
     Notification notification = Notification.builder().id(5L).readAt(firstRead).build();
     when(notificationRepository.findByIdAndRecipientId(5L, 7L)).thenReturn(Optional.of(notification));
@@ -124,12 +136,63 @@ class NotificationServiceTest {
   @Test
   void unreadNotificationIsMarkedReadNow() {
     NotificationService service = new NotificationService(
-        notificationRepository, new TrackMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
     Notification notification = Notification.builder().id(5L).build();
     when(notificationRepository.findByIdAndRecipientId(5L, 7L)).thenReturn(Optional.of(notification));
 
     service.markAsRead(new CustomUserDetails(User.builder().id(7L).build()), 5L);
 
     assertEquals(NOW, notification.getReadAt());
+  }
+
+  @Test
+  void ownerIsNotToldAboutTheUploadWhenTrackUpdatesAreDisabled() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(false);
+
+    service.notifyTrackSubmittedForReview(new TrackUploadedEvent(track));
+
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
+
+  @Test
+  void ownerIsNotToldAboutTheDeletionWhenTrackUpdatesAreDisabled() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
+    User owner = User.builder().id(7L).build();
+    when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(false);
+
+    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
+
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
+
+  @Test
+  void ownerIsToldAboutALike() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    when(settingsService.receives(7L, NotificationCategory.LIKES)).thenReturn(true);
+    ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
+
+    service.notifyTrackLiked(new TrackLikedEvent(track));
+
+    verify(notificationRepository).save(notification.capture());
+    assertEquals(NotificationType.TRACK_LIKED, notification.getValue().getType());
+  }
+
+  @Test
+  void anotherLikeIsNotAnnouncedWhileTheEarlierOneIsUnread() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).build();
+    when(notificationRepository.existsByRecipientIdAndTrackIdAndTypeAndReadAtIsNull(
+        7L, 42L, NotificationType.TRACK_LIKED)).thenReturn(true);
+
+    service.notifyTrackLiked(new TrackLikedEvent(track));
+
+    verify(notificationRepository, never()).save(any(Notification.class));
   }
 }

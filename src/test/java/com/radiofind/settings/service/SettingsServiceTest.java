@@ -1,6 +1,9 @@
 package com.radiofind.settings.service;
 
+import com.radiofind.notification.entity.NotificationCategory;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.settings.dto.NotificationSettingsResponse;
+import com.radiofind.settings.dto.UpdateNotificationSettingsRequest;
 import com.radiofind.settings.dto.GeneralSettingsResponse;
 import com.radiofind.settings.dto.UpdateGeneralSettingsRequest;
 import com.radiofind.settings.entity.AccentColor;
@@ -18,6 +21,8 @@ import org.mockito.ArgumentCaptor;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -53,7 +58,6 @@ class SettingsServiceTest {
         .language(Language.DE)
         .radioMode(false)
         .profileVisibility(ProfileVisibility.ONLY_ME)
-        .notificationsEnabled(false)
         .audioQuality(AudioQuality.LOW)
         .accentColor(AccentColor.OCEAN)
         .build();
@@ -69,7 +73,6 @@ class SettingsServiceTest {
         .language(Language.EN)
         .radioMode(true)
         .profileVisibility(ProfileVisibility.EVERYONE)
-        .notificationsEnabled(true)
         .audioQuality(AudioQuality.HIGH)
         .accentColor(AccentColor.VIOLET)
         .build(), response);
@@ -83,7 +86,6 @@ class SettingsServiceTest {
         .language(Language.FR)
         .radioMode(false)
         .profileVisibility(ProfileVisibility.FOLLOWERS)
-        .notificationsEnabled(false)
         .audioQuality(AudioQuality.NORMAL)
         .accentColor(AccentColor.PLUM)
         .build()));
@@ -93,7 +95,6 @@ class SettingsServiceTest {
     assertEquals(Language.FR, response.getLanguage());
     assertEquals(false, response.isRadioMode());
     assertEquals(ProfileVisibility.FOLLOWERS, response.getProfileVisibility());
-    assertEquals(false, response.isNotificationsEnabled());
     assertEquals(AudioQuality.NORMAL, response.getAudioQuality());
     assertEquals(AccentColor.PLUM, response.getAccentColor());
   }
@@ -113,7 +114,6 @@ class SettingsServiceTest {
     assertEquals(Language.DE, response.getLanguage());
     assertEquals(false, response.isRadioMode());
     assertEquals(ProfileVisibility.ONLY_ME, response.getProfileVisibility());
-    assertEquals(false, response.isNotificationsEnabled());
     assertEquals(AudioQuality.LOW, response.getAudioQuality());
     assertEquals(AccentColor.OCEAN, response.getAccentColor());
   }
@@ -130,5 +130,40 @@ class SettingsServiceTest {
     assertEquals(3L, existing.getId());
     assertEquals(Language.DE, existing.getLanguage());
     assertEquals(AccentColor.OCEAN, existing.getAccentColor());
+  }
+
+  @Test
+  void disabledCategoryIsNotReceived() {
+    when(userSettingsRepository.findByUserId(USER_ID)).thenReturn(Optional.of(UserSettings.builder()
+        .likeNotifications(false)
+        .build()));
+
+    boolean receives = settingsService.receives(USER_ID, NotificationCategory.LIKES);
+
+    assertFalse(receives);
+  }
+
+  @Test
+  void moderationIsReceivedEvenWithEveryCategoryDisabled() {
+    when(userSettingsRepository.findByUserId(USER_ID)).thenReturn(Optional.of(UserSettings.builder()
+        .trackUpdateNotifications(false)
+        .radioUpdateNotifications(false)
+        .likeNotifications(false)
+        .build()));
+
+    boolean receives = settingsService.receives(USER_ID, NotificationCategory.MODERATION);
+
+    assertTrue(receives);
+  }
+
+  @Test
+  void updatesNotificationCategories() {
+    UserSettings existing = UserSettings.builder().id(3L).user(user).build();
+    when(userSettingsRepository.findByUserId(USER_ID)).thenReturn(Optional.of(existing));
+
+    NotificationSettingsResponse response = settingsService.updateNotificationSettings(
+        userDetails, new UpdateNotificationSettingsRequest(false, true, false));
+
+    assertEquals(new NotificationSettingsResponse(false, true, false), response);
   }
 }

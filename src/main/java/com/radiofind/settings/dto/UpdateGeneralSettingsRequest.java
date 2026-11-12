@@ -23,9 +23,6 @@ public class UpdateGeneralSettingsRequest {
   private ProfileVisibility profileVisibility;
 
   @NotNull
-  private Boolean notificationsEnabled;
-
-  @NotNull
   private AudioQuality audioQuality;
 
   @NotNull

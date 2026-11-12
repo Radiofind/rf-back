@@ -29,6 +29,11 @@ public class AuthController {
     return authService.verifyTwoFactor(request);
   }
 
+  @PostMapping("/verify-backup-code")
+  public AuthResponse verifyBackupCode(@Valid @RequestBody VerifyBackupCodeRequest request) {
+    return authService.verifyBackupCode(request);
+  }
+
   @PostMapping("/resend-2fa")
   public AuthResponse resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
     return authService.resendTwoFactor(request);

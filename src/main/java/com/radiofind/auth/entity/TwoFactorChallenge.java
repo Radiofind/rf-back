@@ -27,8 +27,14 @@ public class TwoFactorChallenge {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @Column(nullable = false)
+  @Column(name = "code_hash")
   private String codeHash;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  @ColumnDefault("'EMAIL'")
+  @Builder.Default
+  private TwoFactorMethod method = TwoFactorMethod.EMAIL;
 
   @Column(nullable = false)
   private LocalDateTime expiresAt;

@@ -4,6 +4,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.IllegalTrackStatusException;
 import com.radiofind.track.entity.TrackStatus;
+import com.radiofind.track.event.TrackLikedEvent;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
 import com.radiofind.track.repository.TrackRepository;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -44,6 +46,9 @@ class TrackEngagementServiceTest {
 
   @Mock
   private TrackLikeRepository trackLikeRepository;
+
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   @Spy
   private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -162,5 +167,27 @@ class TrackEngagementServiceTest {
     trackEngagementService.unlike(new CustomUserDetails(User.builder().id(7L).build()), 42L);
 
     verify(trackRepository, never()).decrementLikes(42L);
+  }
+
+  @Test
+  void likeOfAnotherUsersTrackIsAnnouncedToTheOwner() {
+    Track track = Track.builder().id(42L).owner(User.builder().id(1L).build()).status(TrackStatus.APPROVED).build();
+    when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
+    when(trackLikeRepository.insertIfAbsent(42L, 7L, NOW)).thenReturn(1);
+
+    trackEngagementService.like(new CustomUserDetails(User.builder().id(7L).build()), 42L);
+
+    verify(eventPublisher).publishEvent(new TrackLikedEvent(track));
+  }
+
+  @Test
+  void likeOfTheOwnTrackIsNotAnnounced() {
+    Track track = Track.builder().id(42L).owner(User.builder().id(7L).build()).status(TrackStatus.APPROVED).build();
+    when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
+    when(trackLikeRepository.insertIfAbsent(42L, 7L, NOW)).thenReturn(1);
+
+    trackEngagementService.like(new CustomUserDetails(User.builder().id(7L).build()), 42L);
+
+    verifyNoInteractions(eventPublisher);
   }
 }

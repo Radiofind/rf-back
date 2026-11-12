@@ -1,8 +1,10 @@
 package com.radiofind.user.entity;
 
 import com.radiofind.artist.entity.ArtistProfile;
+import com.radiofind.auth.entity.TwoFactorMethod;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -52,6 +54,18 @@ public class User {
   private SubscriptionType subscriptionType;
 
   private int uploadsThisMonth;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "two_factor_method", nullable = false, length = 30)
+  @ColumnDefault("'EMAIL'")
+  @Builder.Default
+  private TwoFactorMethod twoFactorMethod = TwoFactorMethod.EMAIL;
+
+  @Column(name = "totp_secret")
+  private String totpSecret;
+
+  @Column(name = "totp_last_used_step")
+  private Long totpLastUsedStep;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
   private ArtistProfile artistProfile;

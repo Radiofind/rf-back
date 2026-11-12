@@ -4,6 +4,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.user.event.AccountDeletedEvent;
 import com.radiofind.track.event.TrackReportedEvent;
 import com.radiofind.track.repository.TrackRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,12 @@ public class TrackReportService {
   @Transactional(propagation = Propagation.MANDATORY)
   public void forgetDeletedTrack(TrackDeletedEvent event) {
     trackReportRepository.deleteByTrackId(event.trackId());
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedAccount(AccountDeletedEvent event) {
+    trackReportRepository.deleteByReporterId(event.userId());
   }
 
   private String normalize(String comment) {

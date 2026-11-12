@@ -1,5 +1,6 @@
 package com.radiofind.auth.dto;
 
+import com.radiofind.auth.entity.TwoFactorMethod;
 import lombok.*;
 
 @Data
@@ -13,4 +14,8 @@ public class AuthResponse {
   private boolean requiresTwoFactor;
 
   private String challengeId;
+
+  private TwoFactorMethod twoFactorMethod;
+
+  private String destination;
 }

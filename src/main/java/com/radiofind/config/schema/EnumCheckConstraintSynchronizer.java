@@ -1,6 +1,7 @@
 package com.radiofind.config.schema;
 
 import com.radiofind.activity.entity.ActivityType;
+import com.radiofind.auth.entity.TwoFactorMethod;
 import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.settings.entity.AccentColor;
 import com.radiofind.settings.entity.AudioQuality;
@@ -38,7 +39,10 @@ public class EnumCheckConstraintSynchronizer {
       new EnumColumn("track_review_flags", "type", TrackReviewFlagType.class),
       new EnumColumn("schedule_change_requests", "status", ScheduleChangeRequestStatus.class),
       new EnumColumn("track_reports", "reason", TrackReportReason.class),
-      new EnumColumn("track_reports", "status", TrackReportStatus.class));
+      new EnumColumn("track_reports", "status", TrackReportStatus.class),
+      new EnumColumn("users", "two_factor_method", TwoFactorMethod.class),
+      new EnumColumn("two_factor_challenges", "method", TwoFactorMethod.class),
+      new EnumColumn("two_factor_enrollments", "method", TwoFactorMethod.class));
 
   private final JdbcTemplate jdbcTemplate;
 
