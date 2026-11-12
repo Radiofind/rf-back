@@ -70,7 +70,7 @@ class AccountDeletionServiceTest {
     service.delete(new CustomUserDetails(user), "secret");
 
     InOrder order = inOrder(eventPublisher, trackRepository, userRepository);
-    order.verify(eventPublisher).publishEvent(TrackDeletedEvent.of(track));
+    order.verify(eventPublisher).publishEvent(TrackDeletedEvent.ofClosedAccount(track));
     order.verify(trackRepository).delete(track);
     order.verify(eventPublisher).publishEvent(new AccountDeletedEvent(7L));
     order.verify(userRepository).delete(user);
