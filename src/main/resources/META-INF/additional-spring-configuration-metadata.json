@@ -7,6 +7,11 @@
       "description": "A description for 'app.frontend-url'"
     },
     {
+      "name": "app.security.totp-encryption-key",
+      "type": "java.lang.String",
+      "description": "Base64-encoded 32-byte AES key that encrypts authenticator secrets at rest."
+    },
+    {
       "name": "jwt.secret",
       "type": "java.lang.String",
       "description": "A description for 'jwt.secret'"

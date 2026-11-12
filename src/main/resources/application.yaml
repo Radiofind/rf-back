@@ -41,6 +41,9 @@ server:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
+  security:
+    totp-encryption-key: ${TOTP_ENCRYPTION_KEY}
+
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:${app.frontend-url},http://localhost:4200}
 

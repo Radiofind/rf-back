@@ -73,7 +73,7 @@ jobs:
           cache: maven
 
       - name: Test
-        run: ./mvnw --batch-mode test
+        run: TOTP_ENCRYPTION_KEY="$(openssl rand -base64 32)" ./mvnw --batch-mode test
         env:
           DB_URL: jdbc:postgresql://localhost:5432/postgres
           DB_USERNAME: postgres
