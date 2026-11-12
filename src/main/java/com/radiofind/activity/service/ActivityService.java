@@ -58,6 +58,11 @@ public class ActivityService {
   @Transactional(propagation = Propagation.MANDATORY)
   public void recordTrackDeleted(TrackDeletedEvent event) {
     activityRepository.deleteByTrackId(event.trackId());
+
+    if (event.accountClosed()) {
+      return;
+    }
+
     activityRepository.save(Activity.builder()
         .user(event.owner())
         .type(ActivityType.TRACK_DELETED)

@@ -27,6 +27,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,7 +74,7 @@ class ActivityServiceTest {
     User owner = User.builder().id(7L).build();
     ArgumentCaptor<Activity> activity = ArgumentCaptor.forClass(Activity.class);
 
-    activityService.recordTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
+    activityService.recordTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights", false));
 
     verify(activityRepository).deleteByTrackId(42L);
     verify(activityRepository).save(activity.capture());
@@ -121,5 +123,15 @@ class ActivityServiceTest {
     assertEquals("Midnight Dreams", item.getTrack().getTitle());
     assertEquals("The Engines", item.getTrack().getArtistName());
     assertEquals("/api/tracks/42/cover", item.getTrack().getCoverUrl());
+  }
+
+  @Test
+  void closedAccountRecordsNoDeletionOfItsTracks() {
+    User owner = User.builder().id(7L).build();
+
+    activityService.recordTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights", true));
+
+    verify(activityRepository).deleteByTrackId(42L);
+    verify(activityRepository, never()).save(any(Activity.class));
   }
 }

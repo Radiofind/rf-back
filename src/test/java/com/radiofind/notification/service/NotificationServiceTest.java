@@ -99,7 +99,7 @@ class NotificationServiceTest {
     when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(true);
     ArgumentCaptor<Notification> notification = ArgumentCaptor.forClass(Notification.class);
 
-    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
+    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights", false));
 
     verify(notificationRepository).deleteByTrackId(42L);
     verify(notificationRepository).save(notification.capture());
@@ -164,7 +164,7 @@ class NotificationServiceTest {
     User owner = User.builder().id(7L).build();
     when(settingsService.receives(7L, NotificationCategory.TRACK_UPDATES)).thenReturn(false);
 
-    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights"));
+    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights", false));
 
     verify(notificationRepository, never()).save(any(Notification.class));
   }
@@ -193,6 +193,18 @@ class NotificationServiceTest {
 
     service.notifyTrackLiked(new TrackLikedEvent(track));
 
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
+
+  @Test
+  void closedAccountIsNotToldAboutItsDeletedTracks() {
+    NotificationService service = new NotificationService(
+        notificationRepository, new TrackMapper(), settingsService, Clock.fixed(NOW, ZoneOffset.UTC));
+    User owner = User.builder().id(7L).build();
+
+    service.notifyTrackDeleted(new TrackDeletedEvent(42L, owner, "Midnight Dreams", "Neon Lights", true));
+
+    verify(notificationRepository).deleteByTrackId(42L);
     verify(notificationRepository, never()).save(any(Notification.class));
   }
 }

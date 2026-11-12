@@ -63,7 +63,7 @@ class TrackRemovalServiceTest {
 
     InOrder order = inOrder(eventPublisher, trackRepository, trackFileStorageService);
     order.verify(eventPublisher)
-        .publishEvent(new TrackDeletedEvent(42L, ada.getUser(), "Midnight Dreams", "Neon Lights"));
+        .publishEvent(new TrackDeletedEvent(42L, ada.getUser(), "Midnight Dreams", "Neon Lights", false));
     order.verify(trackRepository).delete(track);
     order.verify(trackFileStorageService).deleteAudio("a.wav");
     verify(trackFileStorageService).deleteCover("c.png");
