@@ -51,7 +51,7 @@ public class AccountDeletionService {
     List<Track> tracks = trackRepository.findAllByOwnerId(userId);
 
     tracks.forEach(track -> {
-      eventPublisher.publishEvent(TrackDeletedEvent.of(track));
+      eventPublisher.publishEvent(TrackDeletedEvent.ofClosedAccount(track));
       trackRepository.delete(track);
     });
     eventPublisher.publishEvent(new AccountDeletedEvent(userId));

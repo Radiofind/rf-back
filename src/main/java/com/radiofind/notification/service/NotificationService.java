@@ -72,7 +72,7 @@ public class NotificationService {
   public void notifyTrackDeleted(TrackDeletedEvent event) {
     notificationRepository.deleteByTrackId(event.trackId());
 
-    if (!receives(event.owner(), NotificationType.TRACK_DELETED)) {
+    if (event.accountClosed() || !receives(event.owner(), NotificationType.TRACK_DELETED)) {
       return;
     }
 
