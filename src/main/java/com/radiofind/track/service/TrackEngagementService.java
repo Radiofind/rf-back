@@ -3,6 +3,9 @@ package com.radiofind.track.service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.context.event.EventListener;
 import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackLikedEvent;
+import com.radiofind.user.event.AccountDeletedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.IllegalTrackStatusException;
@@ -26,6 +29,8 @@ public class TrackEngagementService {
   private final TrackListenRepository trackListenRepository;
 
   private final TrackLikeRepository trackLikeRepository;
+
+  private final ApplicationEventPublisher eventPublisher;
 
   private final Clock clock;
 
@@ -51,8 +56,16 @@ public class TrackEngagementService {
       throw new IllegalTrackStatusException("liked", track.getStatus());
     }
 
-    if (trackLikeRepository.insertIfAbsent(trackId, userDetails.getUser().getId(), clock.instant()) > 0) {
-      trackRepository.incrementLikes(trackId);
+    Long likerId = userDetails.getUser().getId();
+
+    if (trackLikeRepository.insertIfAbsent(trackId, likerId, clock.instant()) == 0) {
+      return;
+    }
+
+    trackRepository.incrementLikes(trackId);
+
+    if (!track.getOwner().getId().equals(likerId)) {
+      eventPublisher.publishEvent(new TrackLikedEvent(track));
     }
   }
 
@@ -70,6 +83,14 @@ public class TrackEngagementService {
   public void forgetDeletedTrack(TrackDeletedEvent event) {
     trackLikeRepository.deleteByTrackId(event.trackId());
     trackListenRepository.deleteByTrackId(event.trackId());
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedAccount(AccountDeletedEvent event) {
+    trackRepository.decrementLikesOfTracksLikedBy(event.userId());
+    trackLikeRepository.deleteByUserId(event.userId());
+    trackListenRepository.deleteByListenerId(event.userId());
   }
 
   private Track findTrack(Long trackId) {

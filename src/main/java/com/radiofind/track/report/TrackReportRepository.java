@@ -24,4 +24,8 @@ public interface TrackReportRepository extends JpaRepository<TrackReport, Long> 
   @Modifying
   @Query("DELETE FROM TrackReport r WHERE r.track.id = :trackId")
   int deleteByTrackId(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("DELETE FROM TrackReport r WHERE r.reporter.id = :reporterId")
+  int deleteByReporterId(@Param("reporterId") long reporterId);
 }

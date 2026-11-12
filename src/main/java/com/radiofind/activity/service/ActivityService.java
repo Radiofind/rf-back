@@ -10,6 +10,7 @@ import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.event.ScheduleChangeRequestedEvent;
 import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.user.event.AccountDeletedEvent;
 import com.radiofind.track.event.TrackResubmittedEvent;
 import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
@@ -63,6 +64,12 @@ public class ActivityService {
         .trackTitle(event.title())
         .trackArtistName(event.artistName())
         .build());
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedAccount(AccountDeletedEvent event) {
+    activityRepository.deleteByUserId(event.userId());
   }
 
   @Transactional(readOnly = true)

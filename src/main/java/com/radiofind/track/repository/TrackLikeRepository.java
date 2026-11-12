@@ -46,4 +46,8 @@ public interface TrackLikeRepository extends JpaRepository<TrackLike, Long>, Jpa
   @Modifying
   @Query("DELETE FROM TrackLike l WHERE l.track.id = :trackId")
   int deleteByTrackId(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("DELETE FROM TrackLike l WHERE l.user.id = :userId")
+  int deleteByUserId(@Param("userId") long userId);
 }

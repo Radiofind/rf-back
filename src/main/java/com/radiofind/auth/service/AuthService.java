@@ -10,10 +10,13 @@ import com.radiofind.user.repository.UserRepository;
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.entity.ArtistType;
 import com.radiofind.artist.repository.ArtistProfileRepository;
+import com.radiofind.user.event.AccountDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +25,9 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -46,6 +51,11 @@ public class AuthService {
   private final JwtService jwtService;
   private final EmailService emailService;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
+  private final BackupCodeService backupCodeService;
+  private final TwoFactorDelivery twoFactorDelivery;
+  private final Totp totp;
+  private final TotpSecretCipher totpSecretCipher;
+  private final TwoFactorEnrollmentRepository twoFactorEnrollmentRepository;
 
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -112,14 +122,17 @@ public class AuthService {
             HttpStatus.UNAUTHORIZED,
             "Invalid email or password"));
 
-    String code = generateCode();
+    TwoFactorMethod method = user.getTwoFactorMethod();
+
+    String code = method == TwoFactorMethod.AUTHENTICATOR ? null : generateCode();
 
     String challengeId = UUID.randomUUID().toString();
 
     TwoFactorChallenge challenge = TwoFactorChallenge.builder()
         .challengeId(challengeId)
         .user(user)
-        .codeHash(passwordEncoder.encode(code))
+        .method(method)
+        .codeHash(code == null ? null : passwordEncoder.encode(code))
         .expiresAt(
             LocalDateTime.now()
                 .plusMinutes(CODE_EXPIRATION_MINUTES))
@@ -131,18 +144,56 @@ public class AuthService {
 
     twoFactorChallengeRepository.save(challenge);
 
-    emailService.sendTwoFactorCode(user.getEmail(), code);
+    if (code != null) {
+      twoFactorDelivery.send(user, method, code);
+    }
 
     return AuthResponse.builder()
         .requiresTwoFactor(true)
         .challengeId(challengeId)
+        .twoFactorMethod(method)
+        .destination(twoFactorDelivery.maskedDestination(user, method))
         .build();
   }
 
   @Transactional(noRollbackFor = ResponseStatusException.class)
   public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request) {
+    return verify(
+        request.getChallengeId(),
+        challenge -> matchesChallengeCode(challenge, request.getCode()),
+        "Invalid verification code");
+  }
 
-    TwoFactorChallenge challenge = findChallengeForUpdate(request.getChallengeId());
+  @Transactional(noRollbackFor = ResponseStatusException.class)
+  public AuthResponse verifyBackupCode(VerifyBackupCodeRequest request) {
+    return verify(
+        request.challengeId(),
+        challenge -> backupCodeService.redeem(challenge.getUser(), request.code()),
+        "Invalid backup code");
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedAccount(AccountDeletedEvent event) {
+    twoFactorChallengeRepository.deleteByUserId(event.userId());
+    passwordResetTokenRepository.deleteByUserId(event.userId());
+    twoFactorEnrollmentRepository.deleteByUserId(event.userId());
+  }
+
+  private boolean matchesChallengeCode(TwoFactorChallenge challenge, String code) {
+    if (challenge.getMethod() == TwoFactorMethod.AUTHENTICATOR) {
+      User user = challenge.getUser();
+      OptionalLong step = totp.matchingStep(totpSecretCipher.decrypt(user.getTotpSecret(), user.getId()), code);
+
+      return step.isPresent() && userRepository.claimTotpStep(user.getId(), step.getAsLong()) == 1;
+    }
+
+    return passwordEncoder.matches(code, challenge.getCodeHash());
+  }
+
+  private AuthResponse verify(String challengeId, Predicate<TwoFactorChallenge> proof, String rejection) {
+
+    TwoFactorChallenge challenge = findChallengeForUpdate(challengeId);
 
     if (challenge.isUsed()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has already been used");
@@ -158,12 +209,10 @@ public class AuthService {
 
     challenge.setAttempts(challenge.getAttempts() + 1);
 
-    if (!passwordEncoder.matches(
-        request.getCode(),
-        challenge.getCodeHash())) {
+    if (!proof.test(challenge)) {
       twoFactorChallengeRepository.save(challenge);
 
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid verification code");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, rejection);
     }
 
     challenge.setUsed(true);
@@ -197,6 +246,10 @@ public class AuthService {
       throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many code requests, please log in again");
     }
 
+    if (challenge.getMethod() == TwoFactorMethod.AUTHENTICATOR) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Authenticator codes cannot be resent");
+    }
+
     LocalDateTime nextAllowedSendTime = challenge
         .getLastSentAt()
         .plusSeconds(RESEND_COOLDOWN_SECONDS);
@@ -219,12 +272,14 @@ public class AuthService {
 
     twoFactorChallengeRepository.save(challenge);
 
-    emailService.sendTwoFactorCode(challenge.getUser().getEmail(), code);
+    twoFactorDelivery.send(challenge.getUser(), challenge.getMethod(), code);
 
     return AuthResponse.builder()
         .token(null)
         .requiresTwoFactor(true)
         .challengeId(challenge.getChallengeId())
+        .twoFactorMethod(challenge.getMethod())
+        .destination(twoFactorDelivery.maskedDestination(challenge.getUser(), challenge.getMethod()))
         .build();
   }
 

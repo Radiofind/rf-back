@@ -2,7 +2,9 @@ package com.radiofind.settings.controller;
 
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.settings.dto.GeneralSettingsResponse;
+import com.radiofind.settings.dto.NotificationSettingsResponse;
 import com.radiofind.settings.dto.UpdateGeneralSettingsRequest;
+import com.radiofind.settings.dto.UpdateNotificationSettingsRequest;
 import com.radiofind.settings.service.SettingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,5 +28,17 @@ public class SettingsController {
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @Valid @RequestBody UpdateGeneralSettingsRequest request) {
     return settingsService.updateGeneralSettings(userDetails, request);
+  }
+
+  @GetMapping("/notifications")
+  public NotificationSettingsResponse getNotificationSettings(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    return settingsService.getNotificationSettings(userDetails);
+  }
+
+  @PutMapping("/notifications")
+  public NotificationSettingsResponse updateNotificationSettings(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @Valid @RequestBody UpdateNotificationSettingsRequest request) {
+    return settingsService.updateNotificationSettings(userDetails, request);
   }
 }

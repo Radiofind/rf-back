@@ -7,14 +7,18 @@ import com.radiofind.notification.entity.Notification;
 import com.radiofind.notification.entity.NotificationType;
 import com.radiofind.notification.repository.NotificationRepository;
 import com.radiofind.security.CustomUserDetails;
+import com.radiofind.settings.service.SettingsService;
 import com.radiofind.track.dto.TrackSummaryResponse;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.event.ScheduleChangeRequestedEvent;
 import com.radiofind.track.event.TrackDeletedEvent;
+import com.radiofind.track.event.TrackLikedEvent;
 import com.radiofind.track.event.TrackResubmittedEvent;
 import com.radiofind.track.event.TrackSubmissionCancelledEvent;
 import com.radiofind.track.event.TrackUploadedEvent;
 import com.radiofind.track.service.TrackMapper;
+import com.radiofind.user.entity.User;
+import com.radiofind.user.event.AccountDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +38,8 @@ public class NotificationService {
   private final NotificationRepository notificationRepository;
 
   private final TrackMapper trackMapper;
+
+  private final SettingsService settingsService;
 
   private final Clock clock;
 
@@ -65,12 +71,36 @@ public class NotificationService {
   @Transactional(propagation = Propagation.MANDATORY)
   public void notifyTrackDeleted(TrackDeletedEvent event) {
     notificationRepository.deleteByTrackId(event.trackId());
+
+    if (!receives(event.owner(), NotificationType.TRACK_DELETED)) {
+      return;
+    }
+
     notificationRepository.save(Notification.builder()
         .recipient(event.owner())
         .type(NotificationType.TRACK_DELETED)
         .trackTitle(event.title())
         .trackArtistName(event.artistName())
         .build());
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyTrackLiked(TrackLikedEvent event) {
+    Track track = event.track();
+
+    if (notificationRepository.existsByRecipientIdAndTrackIdAndTypeAndReadAtIsNull(
+        track.getOwner().getId(), track.getId(), NotificationType.TRACK_LIKED)) {
+      return;
+    }
+
+    notify(track, NotificationType.TRACK_LIKED);
+  }
+
+  @EventListener
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void forgetDeletedAccount(AccountDeletedEvent event) {
+    notificationRepository.deleteByRecipientId(event.userId());
   }
 
   @Transactional(readOnly = true)
@@ -105,11 +135,19 @@ public class NotificationService {
   }
 
   private void notify(Track track, NotificationType type) {
+    if (!receives(track.getOwner(), type)) {
+      return;
+    }
+
     notificationRepository.save(Notification.builder()
         .recipient(track.getOwner())
         .type(type)
         .track(track)
         .build());
+  }
+
+  private boolean receives(User recipient, NotificationType type) {
+    return settingsService.receives(recipient.getId(), type.category());
   }
 
   private NotificationResponse toResponse(Notification notification) {

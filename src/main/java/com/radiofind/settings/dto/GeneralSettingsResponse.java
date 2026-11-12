@@ -18,8 +18,6 @@ public class GeneralSettingsResponse {
 
   private ProfileVisibility profileVisibility;
 
-  private boolean notificationsEnabled;
-
   private AudioQuality audioQuality;
 
   private AccentColor accentColor;

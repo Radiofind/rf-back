@@ -7,6 +7,7 @@ import com.radiofind.auth.dto.ArtistInformationDto;
 import com.radiofind.auth.dto.AuthResponse;
 import com.radiofind.auth.dto.ForgotPasswordRequest;
 import com.radiofind.auth.dto.LoginRequest;
+import com.radiofind.auth.dto.VerifyBackupCodeRequest;
 import com.radiofind.auth.dto.RegisterRequest;
 import com.radiofind.auth.dto.ResendTwoFactorRequest;
 import com.radiofind.auth.dto.ResetPasswordRequest;
@@ -16,6 +17,8 @@ import com.radiofind.auth.entity.PasswordResetToken;
 import com.radiofind.auth.entity.TwoFactorChallenge;
 import com.radiofind.auth.repository.PasswordResetTokenRepository;
 import com.radiofind.auth.repository.TwoFactorChallengeRepository;
+import com.radiofind.auth.repository.TwoFactorEnrollmentRepository;
+import com.radiofind.auth.entity.TwoFactorMethod;
 import com.radiofind.notification.service.EmailService;
 import com.radiofind.security.JwtService;
 import com.radiofind.user.entity.User;
@@ -35,6 +38,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -74,6 +78,14 @@ class AuthServiceTest {
 
   private EmailService emailService;
 
+  private BackupCodeService backupCodeService;
+
+  private Totp totp;
+
+  private TotpSecretCipher totpSecretCipher;
+
+  private TwoFactorEnrollmentRepository twoFactorEnrollmentRepository;
+
   private AuthService authService;
 
   private final User user = User.builder().id(7L).email("ada@example.com").password("old-hash").build();
@@ -87,6 +99,10 @@ class AuthServiceTest {
     passwordEncoder = mock(PasswordEncoder.class);
     jwtService = mock(JwtService.class);
     emailService = mock(EmailService.class);
+    backupCodeService = mock(BackupCodeService.class);
+    totp = mock(Totp.class);
+    totpSecretCipher = mock(TotpSecretCipher.class);
+    twoFactorEnrollmentRepository = mock(TwoFactorEnrollmentRepository.class);
     authService = new AuthService(
         userRepository,
         artistProfileRepository,
@@ -94,7 +110,12 @@ class AuthServiceTest {
         passwordEncoder,
         jwtService,
         emailService,
-        passwordResetTokenRepository);
+        passwordResetTokenRepository,
+        backupCodeService,
+        new TwoFactorDelivery(emailService),
+        totp,
+        totpSecretCipher,
+        twoFactorEnrollmentRepository);
     ReflectionTestUtils.setField(authService, "frontendUrl", "https://radiofind.test");
 
     when(passwordEncoder.encode(anyString())).thenAnswer(invocation -> "encoded:" + invocation.getArgument(0));
@@ -485,5 +506,104 @@ class AuthServiceTest {
     verify(artistProfileRepository).save(artistProfile.capture());
     assertEquals(ArtistType.ARTIST, artistProfile.getValue().getType());
     assertEquals("Ada", artistProfile.getValue().getArtistName());
+  }
+
+  @Test
+  void redeemedBackupCodeCompletesTheLogin() {
+    TwoFactorChallenge challenge = activeChallenge(0);
+    when(backupCodeService.redeem(user, "ABCDE-FGHJK")).thenReturn(true);
+    when(jwtService.generateToken(user)).thenReturn("jwt-token");
+
+    AuthResponse response = authService.verifyBackupCode(new VerifyBackupCodeRequest(CHALLENGE_ID, "ABCDE-FGHJK"));
+
+    assertEquals("jwt-token", response.getToken());
+    assertTrue(challenge.isUsed());
+  }
+
+  @Test
+  void unknownBackupCodeUsesUpAnAttempt() {
+    TwoFactorChallenge challenge = activeChallenge(2);
+    when(backupCodeService.redeem(user, "ABCDE-FGHJK")).thenReturn(false);
+
+    assertRejected(HttpStatus.UNAUTHORIZED, "Invalid backup code",
+        () -> authService.verifyBackupCode(new VerifyBackupCodeRequest(CHALLENGE_ID, "ABCDE-FGHJK")));
+    assertEquals(3, challenge.getAttempts());
+  }
+
+  @Test
+  void loginSendsTheCodeToTheRecoveryEmailWhenThatIsTheChosenMethod() {
+    User withRecovery = User.builder().id(7L).email("ada@example.com").recoveryEmail("backup@example.com")
+        .password("old-hash").twoFactorMethod(TwoFactorMethod.RECOVERY_EMAIL).build();
+    when(userRepository.findByEmailIgnoreCase("ada@example.com")).thenReturn(Optional.of(withRecovery));
+    when(passwordEncoder.matches("password", "old-hash")).thenReturn(true);
+
+    AuthResponse response = authService.login(loginRequest("ada@example.com", "password"));
+
+    verify(emailService).sendTwoFactorCode(eq("backup@example.com"), anyString());
+    assertEquals("ba***@example.com", response.getDestination());
+  }
+
+  @Test
+  void loginSendsNoEmailWhenTheAuthenticatorIsTheChosenMethod() {
+    User withAuthenticator = User.builder().id(7L).email("ada@example.com").password("old-hash")
+        .twoFactorMethod(TwoFactorMethod.AUTHENTICATOR).totpSecret("SECRET").build();
+    when(userRepository.findByEmailIgnoreCase("ada@example.com")).thenReturn(Optional.of(withAuthenticator));
+    when(passwordEncoder.matches("password", "old-hash")).thenReturn(true);
+
+    AuthResponse response = authService.login(loginRequest("ada@example.com", "password"));
+
+    assertEquals(TwoFactorMethod.AUTHENTICATOR, response.getTwoFactorMethod());
+    verifyNoInteractions(emailService);
+  }
+
+  @Test
+  void authenticatorCodeCompletesTheLogin() {
+    User withAuthenticator = User.builder().id(7L).email("ada@example.com")
+        .twoFactorMethod(TwoFactorMethod.AUTHENTICATOR).totpSecret("v1:encrypted").build();
+    TwoFactorChallenge challenge = TwoFactorChallenge.builder()
+        .challengeId(CHALLENGE_ID)
+        .user(withAuthenticator)
+        .method(TwoFactorMethod.AUTHENTICATOR)
+        .expiresAt(LocalDateTime.now().plusMinutes(4))
+        .build();
+    when(twoFactorChallengeRepository.findWithLockByChallengeId(CHALLENGE_ID)).thenReturn(Optional.of(challenge));
+    when(totpSecretCipher.decrypt("v1:encrypted", 7L)).thenReturn("SECRET");
+    when(totp.matchingStep("SECRET", "123456")).thenReturn(OptionalLong.of(100L));
+    when(userRepository.claimTotpStep(7L, 100L)).thenReturn(1);
+    when(jwtService.generateToken(withAuthenticator)).thenReturn("jwt-token");
+
+    AuthResponse response = authService.verifyTwoFactor(verifyRequest("123456"));
+
+    assertEquals("jwt-token", response.getToken());
+  }
+
+  @Test
+  void authenticatorCodeThatWasAlreadyUsedIsRejected() {
+    User withAuthenticator = User.builder().id(7L).email("ada@example.com")
+        .twoFactorMethod(TwoFactorMethod.AUTHENTICATOR).totpSecret("v1:encrypted").build();
+    TwoFactorChallenge challenge = TwoFactorChallenge.builder()
+        .challengeId(CHALLENGE_ID)
+        .user(withAuthenticator)
+        .method(TwoFactorMethod.AUTHENTICATOR)
+        .expiresAt(LocalDateTime.now().plusMinutes(4))
+        .build();
+    when(twoFactorChallengeRepository.findWithLockByChallengeId(CHALLENGE_ID)).thenReturn(Optional.of(challenge));
+    when(totpSecretCipher.decrypt("v1:encrypted", 7L)).thenReturn("SECRET");
+    when(totp.matchingStep("SECRET", "123456")).thenReturn(OptionalLong.of(100L));
+    when(userRepository.claimTotpStep(7L, 100L)).thenReturn(0);
+
+    assertRejected(HttpStatus.UNAUTHORIZED, "Invalid verification code",
+        () -> authService.verifyTwoFactor(verifyRequest("123456")));
+    verifyNoInteractions(jwtService);
+  }
+
+  @Test
+  void authenticatorCodeCannotBeResent() {
+    TwoFactorChallenge challenge = activeChallenge(0);
+    challenge.setMethod(TwoFactorMethod.AUTHENTICATOR);
+
+    assertRejected(HttpStatus.BAD_REQUEST, "Authenticator codes cannot be resent",
+        () -> authService.resendTwoFactor(resendRequest()));
+    verifyNoInteractions(emailService);
   }
 }

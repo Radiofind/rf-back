@@ -7,11 +7,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TrackRepository extends JpaRepository<Track, Long>, JpaSpecificationExecutor<Track> {
 
   long countByOwnerId(Long ownerId);
+
+  List<Track> findAllByOwnerId(Long ownerId);
 
   Optional<Track> findByIdAndOwnerId(Long id, Long ownerId);
 
@@ -29,4 +32,10 @@ public interface TrackRepository extends JpaRepository<Track, Long>, JpaSpecific
   @Modifying
   @Query("UPDATE Track t SET t.likesCount = t.likesCount - 1 WHERE t.id = :trackId AND t.likesCount > 0")
   int decrementLikes(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("""
+      UPDATE Track t SET t.likesCount = t.likesCount - 1
+      WHERE t.likesCount > 0 AND t.id IN (SELECT l.track.id FROM TrackLike l WHERE l.user.id = :userId)""")
+  int decrementLikesOfTracksLikedBy(@Param("userId") long userId);
 }

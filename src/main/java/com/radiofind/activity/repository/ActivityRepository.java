@@ -17,4 +17,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
   @Modifying
   @Query("DELETE FROM Activity a WHERE a.track.id = :trackId")
   int deleteByTrackId(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("DELETE FROM Activity a WHERE a.user.id = :userId")
+  int deleteByUserId(@Param("userId") long userId);
 }

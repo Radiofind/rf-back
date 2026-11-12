@@ -31,4 +31,8 @@ public interface TrackListenRepository extends JpaRepository<TrackListen, Long> 
 
   @Query("SELECT MAX(l.createdAt) FROM TrackListen l WHERE l.track.id = :trackId")
   Optional<Instant> findLastListenedAt(@Param("trackId") long trackId);
+
+  @Modifying
+  @Query("DELETE FROM TrackListen l WHERE l.listener.id = :listenerId")
+  int deleteByListenerId(@Param("listenerId") long listenerId);
 }
