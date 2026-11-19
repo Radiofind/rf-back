@@ -3,6 +3,7 @@ package com.radiofind.track.insight;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.repository.TrackListenRepository;
+import com.radiofind.track.repository.TrackPlayRepository;
 import com.radiofind.track.service.OwnTracks;
 import com.radiofind.track.service.TrackMapper;
 import com.radiofind.user.entity.User;
@@ -35,6 +36,9 @@ class TrackInsightServiceTest {
   @Mock
   private TrackListenRepository trackListenRepository;
 
+  @Mock
+  private TrackPlayRepository trackPlayRepository;
+
   @Spy
   private Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
@@ -42,10 +46,11 @@ class TrackInsightServiceTest {
   private TrackInsightService trackInsightService;
 
   @Test
-  void statisticsSplitPlaysIntoListenersAndRadioAirings() {
+  void radioAiringsArePlaysNotMadeByListeners() {
     CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).build());
     when(ownTracks.require(ada, 42L)).thenReturn(Track.builder().id(42L).playsCount(12).likesCount(4).build());
-    when(trackListenRepository.countByTrackId(42L)).thenReturn(9L);
+    when(trackPlayRepository.countByTrackId(42L)).thenReturn(9L);
+    when(trackListenRepository.countByTrackId(42L)).thenReturn(6L);
     when(trackListenRepository.countByTrackIdAndCreatedAtAfter(42L, Instant.parse("2026-11-03T12:00:00Z")))
         .thenReturn(2L);
     when(trackListenRepository.countByTrackIdAndCreatedAtAfter(42L, Instant.parse("2026-10-11T12:00:00Z")))
@@ -55,7 +60,7 @@ class TrackInsightServiceTest {
     TrackStatisticsResponse statistics = trackInsightService.getStatistics(ada, 42L);
 
     assertEquals(
-        new TrackStatisticsResponse(12, 4, 9, 3, 2, 5, Instant.parse("2026-11-09T08:00:00Z")),
+        new TrackStatisticsResponse(12, 4, 6, 3, 2, 5, Instant.parse("2026-11-09T08:00:00Z")),
         statistics);
   }
 }

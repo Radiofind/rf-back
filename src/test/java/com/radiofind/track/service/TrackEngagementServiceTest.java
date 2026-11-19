@@ -7,6 +7,7 @@ import com.radiofind.track.entity.TrackStatus;
 import com.radiofind.track.event.TrackLikedEvent;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
+import com.radiofind.track.repository.TrackPlayRepository;
 import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.entity.User;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,9 @@ class TrackEngagementServiceTest {
   private TrackListenRepository trackListenRepository;
 
   @Mock
+  private TrackPlayRepository trackPlayRepository;
+
+  @Mock
   private TrackLikeRepository trackLikeRepository;
 
   @Mock
@@ -57,25 +61,24 @@ class TrackEngagementServiceTest {
   private TrackEngagementService trackEngagementService;
 
   @Test
-  void firstQualifiedListenOfAListenerCountsAsPlay() {
+  void everyQualifiedListenCountsAsPlay() {
     Track track = Track.builder().id(42L).owner(User.builder().id(1L).build()).build();
     when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
-    when(trackListenRepository.insertIfAbsent(42L, 7L, NOW)).thenReturn(1);
 
     trackEngagementService.recordPlay(new CustomUserDetails(User.builder().id(7L).build()), 42L);
 
+    verify(trackPlayRepository).insert(42L, 7L, NOW);
     verify(trackRepository).incrementPlays(42L);
   }
 
   @Test
-  void repeatedListenOfTheSameListenerDoesNotCountAgain() {
+  void listenerIsRememberedForUniqueListenerCounts() {
     Track track = Track.builder().id(42L).owner(User.builder().id(1L).build()).build();
     when(trackRepository.findById(42L)).thenReturn(Optional.of(track));
-    when(trackListenRepository.insertIfAbsent(42L, 7L, NOW)).thenReturn(0);
 
     trackEngagementService.recordPlay(new CustomUserDetails(User.builder().id(7L).build()), 42L);
 
-    verify(trackRepository, never()).incrementPlays(42L);
+    verify(trackListenRepository).insertIfAbsent(42L, 7L, NOW);
   }
 
   @Test
@@ -85,7 +88,7 @@ class TrackEngagementServiceTest {
 
     trackEngagementService.recordPlay(new CustomUserDetails(User.builder().id(7L).build()), 42L);
 
-    verifyNoInteractions(trackListenRepository);
+    verifyNoInteractions(trackPlayRepository, trackListenRepository);
     verify(trackRepository, never()).incrementPlays(42L);
   }
 
