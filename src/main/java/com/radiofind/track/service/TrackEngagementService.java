@@ -11,6 +11,7 @@ import com.radiofind.track.entity.Track;
 import com.radiofind.track.entity.IllegalTrackStatusException;
 import com.radiofind.track.repository.TrackLikeRepository;
 import com.radiofind.track.repository.TrackListenRepository;
+import com.radiofind.track.repository.TrackPlayRepository;
 import com.radiofind.track.repository.TrackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,8 @@ public class TrackEngagementService {
   private final TrackRepository trackRepository;
 
   private final TrackListenRepository trackListenRepository;
+
+  private final TrackPlayRepository trackPlayRepository;
 
   private final TrackLikeRepository trackLikeRepository;
 
@@ -43,9 +47,10 @@ public class TrackEngagementService {
       return;
     }
 
-    if (trackListenRepository.insertIfAbsent(trackId, listenerId, clock.instant()) > 0) {
-      trackRepository.incrementPlays(trackId);
-    }
+    Instant now = clock.instant();
+    trackPlayRepository.insert(trackId, listenerId, now);
+    trackListenRepository.insertIfAbsent(trackId, listenerId, now);
+    trackRepository.incrementPlays(trackId);
   }
 
   @Transactional
@@ -83,6 +88,7 @@ public class TrackEngagementService {
   public void forgetDeletedTrack(TrackDeletedEvent event) {
     trackLikeRepository.deleteByTrackId(event.trackId());
     trackListenRepository.deleteByTrackId(event.trackId());
+    trackPlayRepository.deleteByTrackId(event.trackId());
   }
 
   @EventListener
@@ -91,6 +97,7 @@ public class TrackEngagementService {
     trackRepository.decrementLikesOfTracksLikedBy(event.userId());
     trackLikeRepository.deleteByUserId(event.userId());
     trackListenRepository.deleteByListenerId(event.userId());
+    trackPlayRepository.deleteByListenerId(event.userId());
   }
 
   private Track findTrack(Long trackId) {

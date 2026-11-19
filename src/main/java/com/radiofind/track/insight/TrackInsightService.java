@@ -4,6 +4,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.track.dto.TrackDetailsResponse;
 import com.radiofind.track.entity.Track;
 import com.radiofind.track.repository.TrackListenRepository;
+import com.radiofind.track.repository.TrackPlayRepository;
 import com.radiofind.track.service.OwnTracks;
 import com.radiofind.track.service.TrackMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ public class TrackInsightService {
 
   private final TrackListenRepository trackListenRepository;
 
+  private final TrackPlayRepository trackPlayRepository;
+
   private final Clock clock;
 
   @Transactional(readOnly = true)
@@ -39,13 +42,13 @@ public class TrackInsightService {
   public TrackStatisticsResponse getStatistics(CustomUserDetails userDetails, Long trackId) {
     Track track = ownTracks.require(userDetails, trackId);
     Instant now = clock.instant();
-    long uniqueListeners = trackListenRepository.countByTrackId(trackId);
+    long listenerPlays = trackPlayRepository.countByTrackId(trackId);
 
     return new TrackStatisticsResponse(
         track.getPlaysCount(),
         track.getLikesCount(),
-        uniqueListeners,
-        Math.max(track.getPlaysCount() - uniqueListeners, 0),
+        trackListenRepository.countByTrackId(trackId),
+        Math.max(track.getPlaysCount() - listenerPlays, 0),
         trackListenRepository.countByTrackIdAndCreatedAtAfter(trackId, now.minus(WEEK)),
         trackListenRepository.countByTrackIdAndCreatedAtAfter(trackId, now.minus(MONTH)),
         trackListenRepository.findLastListenedAt(trackId).orElse(null));
