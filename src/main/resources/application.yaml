@@ -37,6 +37,7 @@ spring:
 
 server:
   port: 8080
+  forward-headers-strategy: native
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
@@ -51,6 +52,11 @@ app:
     avatar-path: ${AVATARS_PATH:./storage/avatars}
     track-audio-path: ${TRACK_AUDIO_PATH:./storage/tracks/audio}
     track-cover-path: ${TRACK_COVERS_PATH:./storage/tracks/covers}
+
+  telegram:
+    api-url: ${TELEGRAM_API_URL:https://api.telegram.org}
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}
 
   fingerprint:
     fpcalc-path: ${FPCALC_PATH:fpcalc}

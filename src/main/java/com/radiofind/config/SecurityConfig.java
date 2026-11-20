@@ -34,6 +34,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/error").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/tracks/*/cover", "/api/tracks/*/audio").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/support/contact-messages").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
