@@ -20,7 +20,7 @@ import java.util.Set;
 public interface TrackLikeRepository extends JpaRepository<TrackLike, Long>, JpaSpecificationExecutor<TrackLike> {
 
   @Override
-  @EntityGraph(attributePaths = "track")
+  @EntityGraph(attributePaths = { "track", "track.owner" })
   Page<TrackLike> findAll(Specification<TrackLike> spec, Pageable pageable);
 
   @Query("SELECT l.track FROM TrackLike l WHERE l.track.id = :trackId AND l.user.id = :userId")

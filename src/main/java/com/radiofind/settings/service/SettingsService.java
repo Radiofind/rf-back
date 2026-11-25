@@ -6,6 +6,7 @@ import com.radiofind.settings.dto.GeneralSettingsResponse;
 import com.radiofind.settings.dto.NotificationSettingsResponse;
 import com.radiofind.settings.dto.UpdateGeneralSettingsRequest;
 import com.radiofind.settings.dto.UpdateNotificationSettingsRequest;
+import com.radiofind.settings.entity.ProfileVisibility;
 import com.radiofind.settings.entity.UserSettings;
 import com.radiofind.settings.repository.UserSettingsRepository;
 import com.radiofind.user.event.AccountDeletedEvent;
@@ -67,6 +68,11 @@ public class SettingsService {
   @Transactional(readOnly = true)
   public boolean receives(long userId, NotificationCategory category) {
     return findSettings(userId).receives(category);
+  }
+
+  @Transactional(readOnly = true)
+  public ProfileVisibility profileVisibilityOf(long userId) {
+    return findSettings(userId).getProfileVisibility();
   }
 
   @EventListener

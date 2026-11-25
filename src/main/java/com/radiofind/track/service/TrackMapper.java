@@ -26,6 +26,12 @@ public class TrackMapper {
         .build();
   }
 
+  public TrackResponse toListenerResponse(Track track, String audioToken, boolean liked, long listenerId) {
+    return responseOf(track, audioToken, liked)
+        .own(track.getOwner().getId() == listenerId)
+        .build();
+  }
+
   public TrackResponse toLibraryResponse(TrackLike like, String audioToken) {
     Track track = like.getTrack();
 
@@ -82,6 +88,7 @@ public class TrackMapper {
         .id(track.getId())
         .title(track.getTitle())
         .artistName(track.getArtistName())
+        .artistPublicId(track.getOwner().getPublicId())
         .genres(List.copyOf(track.getGenres()))
         .description(track.getDescription())
         .status(track.getStatus())

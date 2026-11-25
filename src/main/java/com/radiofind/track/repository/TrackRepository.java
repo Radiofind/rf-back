@@ -1,6 +1,7 @@
 package com.radiofind.track.repository;
 
 import com.radiofind.track.entity.Track;
+import com.radiofind.track.entity.TrackStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -13,6 +14,14 @@ import java.util.Optional;
 public interface TrackRepository extends JpaRepository<Track, Long>, JpaSpecificationExecutor<Track> {
 
   long countByOwnerId(Long ownerId);
+
+  long countByOwnerIdAndStatus(Long ownerId, TrackStatus status);
+
+  @Query("SELECT COALESCE(SUM(t.likesCount), 0) FROM Track t WHERE t.owner.id = :ownerId")
+  long sumLikesOfOwner(@Param("ownerId") Long ownerId);
+
+  @Query("SELECT COALESCE(SUM(t.likesCount), 0) FROM Track t WHERE t.owner.id = :ownerId AND t.status = :status")
+  long sumLikesOfOwnerInStatus(@Param("ownerId") long ownerId, @Param("status") TrackStatus status);
 
   List<Track> findAllByOwnerId(Long ownerId);
 

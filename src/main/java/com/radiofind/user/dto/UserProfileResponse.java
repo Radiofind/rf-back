@@ -42,5 +42,9 @@ public class UserProfileResponse {
 
   private long uploadsCount;
 
+  private long followersCount;
+
+  private long likesCount;
+
   private String avatarUrl;
 }

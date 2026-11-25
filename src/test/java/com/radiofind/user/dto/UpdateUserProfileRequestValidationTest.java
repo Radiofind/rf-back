@@ -44,6 +44,7 @@ class UpdateUserProfileRequestValidationTest {
     request.setName("Ada");
     request.setSurname("Lovelace");
     request.setEmail("ada@example.com");
+    request.setArtistName("Ada");
     return request;
   }
 
@@ -53,8 +54,10 @@ class UpdateUserProfileRequestValidationTest {
   }
 
   @Test
-  void requiresNameSurnameAndEmail() {
-    assertEquals(Set.of("name", "surname", "email"), invalidFields(new UpdateUserProfileRequest()));
+  void requiresNameSurnameEmailAndArtistName() {
+    assertEquals(
+        Set.of("name", "surname", "email", "artistName"),
+        invalidFields(new UpdateUserProfileRequest()));
   }
 
   @Test

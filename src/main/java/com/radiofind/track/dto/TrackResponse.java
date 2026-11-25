@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -18,6 +19,8 @@ public class TrackResponse {
   private String title;
 
   private String artistName;
+
+  private UUID artistPublicId;
 
   private List<String> genres;
 
