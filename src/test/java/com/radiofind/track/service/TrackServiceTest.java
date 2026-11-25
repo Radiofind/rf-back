@@ -288,6 +288,7 @@ class TrackServiceTest {
     User owner = User.builder().id(7L).build();
     Track track = Track.builder()
         .id(42L)
+        .owner(owner)
         .title("Midnight Dreams")
         .genres(List.of("AMBIENT"))
         .status(TrackStatus.PENDING_REVIEW)

@@ -9,7 +9,7 @@ import com.radiofind.security.JwtAuthenticationFilter;
 import com.radiofind.security.JwtService;
 import com.radiofind.settings.controller.SettingsController;
 import com.radiofind.settings.service.SettingsService;
-import com.radiofind.storage.service.FileStorageService;
+import com.radiofind.storage.service.AvatarFiles;
 import com.radiofind.user.controller.UserController;
 import com.radiofind.user.dto.CurrentUserResponse;
 import com.radiofind.user.entity.Role;
@@ -58,7 +58,7 @@ class SecurityConfigTest {
   private UserService userService;
 
   @MockitoBean
-  private FileStorageService fileStorageService;
+  private AvatarFiles avatarFiles;
 
   @MockitoBean
   private SettingsService settingsService;

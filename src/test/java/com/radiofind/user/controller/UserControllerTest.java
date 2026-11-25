@@ -5,6 +5,7 @@ import com.radiofind.security.CustomUserDetails;
 import com.radiofind.security.CustomUserDetailsService;
 import com.radiofind.security.JwtAuthenticationFilter;
 import com.radiofind.security.JwtService;
+import com.radiofind.storage.service.AvatarFiles;
 import com.radiofind.storage.service.FileStorageService;
 import com.radiofind.storage.service.TestImages;
 import com.radiofind.user.entity.Role;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
-@Import({ SecurityConfig.class, JwtAuthenticationFilter.class })
+@Import({ SecurityConfig.class, JwtAuthenticationFilter.class, AvatarFiles.class })
 class UserControllerTest {
 
   @TempDir

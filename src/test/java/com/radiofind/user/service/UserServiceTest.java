@@ -4,6 +4,7 @@ import com.radiofind.artist.dto.ArtistSocialLinksDto;
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.entity.ArtistSocialLinks;
 import com.radiofind.artist.entity.ArtistType;
+import com.radiofind.follow.repository.FollowRepository;
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.storage.service.FileStorageService;
 import com.radiofind.storage.service.TestImages;
@@ -56,16 +57,20 @@ class UserServiceTest {
 
   private TrackRepository trackRepository;
 
+  private FollowRepository followRepository;
+
   private UserService userService;
 
   @BeforeEach
   void setUp() {
     userRepository = mock(UserRepository.class);
     trackRepository = mock(TrackRepository.class);
+    followRepository = mock(FollowRepository.class);
     userService = new UserService(
         userRepository,
         new FileStorageService(avatarsPath.toString()),
-        trackRepository);
+        trackRepository,
+        followRepository);
   }
 
   private CustomUserDetails userWithAvatar(String avatarFileName) {
@@ -425,5 +430,27 @@ class UserServiceTest {
     UserProfileResponse profile = userService.getUserProfile(new CustomUserDetails(user));
 
     assertEquals(3L, profile.getUploadsCount());
+  }
+
+  @Test
+  void profileCountsFollowers() {
+    User user = User.builder().id(USER_ID).name("Ada").surname("Lovelace").email("ada@example.com").build();
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+    when(followRepository.countFollowers(USER_ID)).thenReturn(12L);
+
+    UserProfileResponse profile = userService.getUserProfile(new CustomUserDetails(user));
+
+    assertEquals(12L, profile.getFollowersCount());
+  }
+
+  @Test
+  void profileCountsLikesOfEveryTrackTheUserUploaded() {
+    User user = User.builder().id(USER_ID).name("Ada").surname("Lovelace").email("ada@example.com").build();
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+    when(trackRepository.sumLikesOfOwner(USER_ID)).thenReturn(40L);
+
+    UserProfileResponse profile = userService.getUserProfile(new CustomUserDetails(user));
+
+    assertEquals(40L, profile.getLikesCount());
   }
 }

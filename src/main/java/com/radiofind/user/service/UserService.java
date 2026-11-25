@@ -1,6 +1,7 @@
 package com.radiofind.user.service;
 
 import com.radiofind.artist.dto.ArtistSocialLinksDto;
+import com.radiofind.follow.repository.FollowRepository;
 import com.radiofind.artist.entity.ArtistProfile;
 import com.radiofind.artist.entity.ArtistSocialLinks;
 import com.radiofind.artist.entity.ArtistType;
@@ -39,13 +40,17 @@ public class UserService {
 
   private final TrackRepository trackRepository;
 
+  private final FollowRepository followRepository;
+
   public UserService(
       UserRepository userRepository,
       FileStorageService fileStorageService,
-      TrackRepository trackRepository) {
+      TrackRepository trackRepository,
+      FollowRepository followRepository) {
     this.userRepository = userRepository;
     this.fileStorageService = fileStorageService;
     this.trackRepository = trackRepository;
+    this.followRepository = followRepository;
   }
 
   public CurrentUserResponse getCurrentUser(
@@ -244,10 +249,12 @@ public class UserService {
                 : null)
         .socialLinks(
             artistProfile != null
-                ? toSocialLinksDto(artistProfile.getSocialLinks())
+                ? ArtistSocialLinksDto.from(artistProfile.getSocialLinks())
                 : null)
         .registeredAt(user.getCreatedAt())
         .uploadsCount(trackRepository.countByOwnerId(user.getId()))
+        .followersCount(followRepository.countFollowers(user.getId()))
+        .likesCount(trackRepository.sumLikesOfOwner(user.getId()))
         .avatarUrl(getAvatarUrl(user))
         .build();
   }
@@ -314,27 +321,6 @@ public class UserService {
         .bandcamp(bandcamp)
         .icloud(icloud)
         .tiktok(tiktok)
-        .build();
-  }
-
-  private ArtistSocialLinksDto toSocialLinksDto(
-      ArtistSocialLinks links) {
-
-    if (links == null) {
-      return null;
-    }
-
-    return ArtistSocialLinksDto.builder()
-        .telegram(links.getTelegram())
-        .instagram(links.getInstagram())
-        .youtube(links.getYoutube())
-        .facebook(links.getFacebook())
-        .spotify(links.getSpotify())
-        .appleMusic(links.getAppleMusic())
-        .soundcloud(links.getSoundcloud())
-        .bandcamp(links.getBandcamp())
-        .icloud(links.getIcloud())
-        .tiktok(links.getTiktok())
         .build();
   }
 

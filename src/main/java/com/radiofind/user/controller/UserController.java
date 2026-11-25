@@ -2,23 +2,16 @@ package com.radiofind.user.controller;
 
 import com.radiofind.security.CustomUserDetails;
 import com.radiofind.user.dto.*;
-import com.radiofind.user.entity.User;
 import com.radiofind.user.service.UserService;
-import com.radiofind.storage.service.ImageType;
-import com.radiofind.storage.service.FileStorageService;
+import com.radiofind.storage.service.AvatarFiles;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/api/users/me")
@@ -26,7 +19,7 @@ import java.nio.file.Path;
 public class UserController {
 
   private final UserService userService;
-  private final FileStorageService fileStorageService;
+  private final AvatarFiles avatarFiles;
 
   @GetMapping("")
   public CurrentUserResponse getCurrentUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -40,31 +33,9 @@ public class UserController {
 
   @GetMapping("/avatar")
   public ResponseEntity<Resource> getAvatar(@AuthenticationPrincipal CustomUserDetails userDetails) {
-    User user = userDetails.getUser();
-
-    if (user.getAvatarFileName() == null) {
-      return ResponseEntity.notFound().build();
-    }
-
-    Path avatarPath = fileStorageService.getAvatarPath(user.getAvatarFileName());
-
-    if (!Files.exists(avatarPath)) {
-      return ResponseEntity.notFound().build();
-    }
-
-    try {
-      Resource resource = new UrlResource(avatarPath.toUri());
-
-      MediaType mediaType = ImageType.fromFileName(user.getAvatarFileName())
-          .map(ImageType::getMediaType)
-          .orElse(MediaType.APPLICATION_OCTET_STREAM);
-
-      return ResponseEntity.ok()
-          .contentType(mediaType)
-          .body(resource);
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to read avatar file", e);
-    }
+    return avatarFiles.find(userDetails.getUser().getAvatarFileName())
+        .map(avatar -> ResponseEntity.ok().contentType(avatar.mediaType()).body(avatar.resource()))
+        .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
   @PostMapping(value = "/avatar", consumes = "multipart/form-data")
