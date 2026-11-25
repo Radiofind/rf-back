@@ -6,6 +6,7 @@ import com.radiofind.security.CustomUserDetailsService;
 import com.radiofind.security.JwtAuthenticationFilter;
 import com.radiofind.security.JwtService;
 import com.radiofind.statistics.StatisticsResponse.Totals;
+import com.radiofind.statistics.period.Granularity;
 import com.radiofind.statistics.period.StatisticsPeriod;
 import com.radiofind.user.entity.Role;
 import com.radiofind.user.entity.User;
@@ -48,6 +49,7 @@ class StatisticsControllerTest {
     when(statisticsService.getStatistics(ada, StatisticsPeriod.LAST_12_MONTHS, ZoneId.of("Europe/Zurich")))
         .thenReturn(new StatisticsResponse(
             StatisticsPeriod.LAST_12_MONTHS,
+            Granularity.MONTH,
             new Totals(120, 8, 14, 60),
             new Totals(100, 10, 7, 61),
             List.of(),
@@ -67,7 +69,8 @@ class StatisticsControllerTest {
   void lastThirtyDaysInUtcAreShownByDefault() throws Exception {
     CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).email("ada@example.com").role(Role.USER).build());
     when(statisticsService.getStatistics(ada, StatisticsPeriod.LAST_30_DAYS, ZoneId.of("UTC")))
-        .thenReturn(new StatisticsResponse(StatisticsPeriod.LAST_30_DAYS, null, null, List.of(), List.of(), List.of()));
+        .thenReturn(new StatisticsResponse(
+            StatisticsPeriod.LAST_30_DAYS, Granularity.DAY, null, null, List.of(), List.of(), List.of()));
 
     mockMvc.perform(get("/api/users/me/statistics").with(user(ada)))
         .andExpect(status().isOk())
