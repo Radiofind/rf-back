@@ -166,4 +166,20 @@ class SettingsServiceTest {
 
     assertEquals(new NotificationSettingsResponse(false, true, false), response);
   }
+
+  @Test
+  void profileOfUserWhoNeverSavedSettingsIsVisibleToEveryone() {
+    when(userSettingsRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+
+    assertEquals(ProfileVisibility.EVERYONE, settingsService.profileVisibilityOf(USER_ID));
+  }
+
+  @Test
+  void profileVisibilityIsTheOneTheUserSaved() {
+    when(userSettingsRepository.findByUserId(USER_ID)).thenReturn(Optional.of(UserSettings.builder()
+        .profileVisibility(ProfileVisibility.FOLLOWERS)
+        .build()));
+
+    assertEquals(ProfileVisibility.FOLLOWERS, settingsService.profileVisibilityOf(USER_ID));
+  }
 }

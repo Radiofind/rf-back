@@ -30,6 +30,7 @@ public class UpdateUserProfileRequest {
   @Size(max = 254)
   private String recoveryEmail;
 
+  @NotBlank
   @Size(max = 150)
   private String artistName;
 

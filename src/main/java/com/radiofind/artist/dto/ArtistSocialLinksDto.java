@@ -1,5 +1,6 @@
 package com.radiofind.artist.dto;
 
+import com.radiofind.artist.entity.ArtistSocialLinks;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -38,4 +39,24 @@ public class ArtistSocialLinksDto {
 
   @Size(max = 2048)
   private String tiktok;
+
+  public static ArtistSocialLinksDto from(ArtistSocialLinks links) {
+
+    if (links == null) {
+      return null;
+    }
+
+    return ArtistSocialLinksDto.builder()
+        .telegram(links.getTelegram())
+        .instagram(links.getInstagram())
+        .youtube(links.getYoutube())
+        .facebook(links.getFacebook())
+        .spotify(links.getSpotify())
+        .appleMusic(links.getAppleMusic())
+        .soundcloud(links.getSoundcloud())
+        .bandcamp(links.getBandcamp())
+        .icloud(links.getIcloud())
+        .tiktok(links.getTiktok())
+        .build();
+  }
 }
