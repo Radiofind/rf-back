@@ -9,6 +9,7 @@ import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.event.AccountDeletedEvent;
 import com.radiofind.user.repository.UserRepository;
+import com.radiofind.user.service.DeletedAccounts;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -22,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +37,9 @@ class AccountDeletionServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private DeletedAccounts deletedAccounts;
 
   @Mock
   private TrackRepository trackRepository;
@@ -56,7 +61,7 @@ class AccountDeletionServiceTest {
 
   @Test
   void tracksAreDeletedBeforeTheAccountItself() {
-    AccountDeletionService service = new AccountDeletionService(userRepository, trackRepository,
+    AccountDeletionService service = new AccountDeletionService(userRepository, deletedAccounts, trackRepository,
         new PasswordConfirmation(passwordEncoder), eventPublisher, transactionTemplate,
         trackFileStorageService, fileStorageService);
     User user = User.builder().id(7L).password("hash").build();
@@ -78,7 +83,7 @@ class AccountDeletionServiceTest {
 
   @Test
   void filesOfTheDeletedAccountAreRemoved() {
-    AccountDeletionService service = new AccountDeletionService(userRepository, trackRepository,
+    AccountDeletionService service = new AccountDeletionService(userRepository, deletedAccounts, trackRepository,
         new PasswordConfirmation(passwordEncoder), eventPublisher, transactionTemplate,
         trackFileStorageService, fileStorageService);
     User user = User.builder().id(7L).password("hash").avatarFileName("avatar.png").build();
@@ -97,8 +102,26 @@ class AccountDeletionServiceTest {
   }
 
   @Test
+  void publicIdOfTheDeletedAccountIsRemembered() {
+    AccountDeletionService service = new AccountDeletionService(userRepository, deletedAccounts,
+        trackRepository, new PasswordConfirmation(passwordEncoder), eventPublisher, transactionTemplate,
+        trackFileStorageService, fileStorageService);
+    UUID publicId = UUID.fromString("6f1c2b4e-3d5a-4c8e-9b7f-1a2b3c4d5e6f");
+    User user = User.builder().id(7L).publicId(publicId).password("hash").build();
+    when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
+    when(transactionTemplate.execute(any())).thenAnswer(
+        invocation -> invocation.<TransactionCallback<?>>getArgument(0).doInTransaction(null));
+    when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+    when(trackRepository.findAllByOwnerId(7L)).thenReturn(List.of());
+
+    service.delete(new CustomUserDetails(user), "secret");
+
+    verify(deletedAccounts).remember(publicId);
+  }
+
+  @Test
   void accountIsKeptWhenThePasswordIsWrong() {
-    AccountDeletionService service = new AccountDeletionService(userRepository, trackRepository,
+    AccountDeletionService service = new AccountDeletionService(userRepository, deletedAccounts, trackRepository,
         new PasswordConfirmation(passwordEncoder), eventPublisher, transactionTemplate,
         trackFileStorageService, fileStorageService);
     User user = User.builder().id(7L).password("hash").build();
@@ -106,6 +129,6 @@ class AccountDeletionServiceTest {
 
     assertThrows(ResponseStatusException.class, () -> service.delete(new CustomUserDetails(user), "wrong"));
 
-    verifyNoInteractions(transactionTemplate, userRepository, trackRepository);
+    verifyNoInteractions(transactionTemplate, userRepository, deletedAccounts, trackRepository);
   }
 }
