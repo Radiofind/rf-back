@@ -9,6 +9,7 @@ import com.radiofind.track.repository.TrackRepository;
 import com.radiofind.user.entity.User;
 import com.radiofind.user.event.AccountDeletedEvent;
 import com.radiofind.user.repository.UserRepository;
+import com.radiofind.user.service.DeletedAccounts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,6 +27,7 @@ import java.util.function.Consumer;
 public class AccountDeletionService {
 
   private final UserRepository userRepository;
+  private final DeletedAccounts deletedAccounts;
   private final TrackRepository trackRepository;
   private final PasswordConfirmation passwordConfirmation;
   private final ApplicationEventPublisher eventPublisher;
@@ -56,6 +58,7 @@ public class AccountDeletionService {
     });
     eventPublisher.publishEvent(new AccountDeletedEvent(userId));
     userRepository.delete(user);
+    deletedAccounts.remember(user.getPublicId());
 
     return new RemovedAccount(userId, user.getAvatarFileName(), tracks);
   }
