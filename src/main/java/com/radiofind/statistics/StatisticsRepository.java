@@ -10,10 +10,9 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,13 +33,13 @@ public class StatisticsRepository {
           WHERE t.owner_id = :ownerId AND p.played_at >= :from AND p.played_at < :to) AS unique_listeners""";
 
   private static final String PLAYS_PER_BUCKET = """
-      SELECT CAST(date_trunc(:unit, p.played_at AT TIME ZONE :zone) AS date) AS bucket, count(*) AS total
+      SELECT date_trunc(:truncation, p.played_at AT TIME ZONE :zone) AS bucket, count(*) AS total
       FROM track_plays p JOIN tracks t ON t.id = p.track_id
       WHERE t.owner_id = :ownerId AND p.played_at >= :from AND p.played_at < :to
       GROUP BY bucket""";
 
   private static final String DOWNLOADS_PER_BUCKET = """
-      SELECT CAST(date_trunc(:unit, d.downloaded_at AT TIME ZONE :zone) AS date) AS bucket, count(*) AS total
+      SELECT date_trunc(:truncation, d.downloaded_at AT TIME ZONE :zone) AS bucket, count(*) AS total
       FROM track_downloads d JOIN tracks t ON t.id = d.track_id
       WHERE t.owner_id = :ownerId AND d.downloaded_at >= :from AND d.downloaded_at < :to
       GROUP BY bucket""";
@@ -77,11 +76,11 @@ public class StatisticsRepository {
         .single();
   }
 
-  public Map<LocalDate, Long> playsPerBucket(long ownerId, ReportingWindow window) {
+  public Map<LocalDateTime, Long> playsPerBucket(long ownerId, ReportingWindow window) {
     return perBucket(PLAYS_PER_BUCKET, ownerId, window);
   }
 
-  public Map<LocalDate, Long> downloadsPerBucket(long ownerId, ReportingWindow window) {
+  public Map<LocalDateTime, Long> downloadsPerBucket(long ownerId, ReportingWindow window) {
     return perBucket(DOWNLOADS_PER_BUCKET, ownerId, window);
   }
 
@@ -104,9 +103,9 @@ public class StatisticsRepository {
         .list();
   }
 
-  private Map<LocalDate, Long> perBucket(String sql, long ownerId, ReportingWindow window) {
+  private Map<LocalDateTime, Long> perBucket(String sql, long ownerId, ReportingWindow window) {
     return jdbcClient.sql(sql)
-        .param("unit", window.unit() == ChronoUnit.MONTHS ? "month" : "day")
+        .param("truncation", window.granularity().getTruncation())
         .param("zone", window.zone().getId())
         .param("ownerId", ownerId)
         .param("from", timestamp(window.from()))
@@ -118,7 +117,7 @@ public class StatisticsRepository {
   }
 
   private static BucketCount bucketCount(ResultSet rs, int row) throws SQLException {
-    return new BucketCount(rs.getObject("bucket", LocalDate.class), rs.getLong("total"));
+    return new BucketCount(rs.getObject("bucket", LocalDateTime.class), rs.getLong("total"));
   }
 
   private static OffsetDateTime timestamp(Instant instant) {
@@ -128,6 +127,6 @@ public class StatisticsRepository {
   public record TrackPlays(long trackId, long plays) {
   }
 
-  private record BucketCount(LocalDate bucket, long total) {
+  private record BucketCount(LocalDateTime bucket, long total) {
   }
 }

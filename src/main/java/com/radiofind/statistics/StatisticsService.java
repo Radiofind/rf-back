@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -47,6 +47,7 @@ public class StatisticsService {
 
     return new StatisticsResponse(
         period,
+        window.granularity(),
         statisticsRepository.totals(ownerId, window.from(), window.to()),
         statisticsRepository.totals(ownerId, window.previousFrom(), window.from()),
         timeline(ownerId, window),
@@ -55,8 +56,8 @@ public class StatisticsService {
   }
 
   private List<TimelinePoint> timeline(long ownerId, ReportingWindow window) {
-    Map<LocalDate, Long> plays = statisticsRepository.playsPerBucket(ownerId, window);
-    Map<LocalDate, Long> downloads = statisticsRepository.downloadsPerBucket(ownerId, window);
+    Map<LocalDateTime, Long> plays = statisticsRepository.playsPerBucket(ownerId, window);
+    Map<LocalDateTime, Long> downloads = statisticsRepository.downloadsPerBucket(ownerId, window);
 
     return window.bucketStarts().stream()
         .map(start -> new TimelinePoint(start, plays.getOrDefault(start, 0L), downloads.getOrDefault(start, 0L)))

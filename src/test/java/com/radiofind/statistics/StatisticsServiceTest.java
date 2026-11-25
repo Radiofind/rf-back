@@ -5,6 +5,7 @@ import com.radiofind.statistics.StatisticsRepository.TrackPlays;
 import com.radiofind.statistics.StatisticsResponse.TimelinePoint;
 import com.radiofind.statistics.StatisticsResponse.TopTrack;
 import com.radiofind.statistics.StatisticsResponse.Totals;
+import com.radiofind.statistics.period.Granularity;
 import com.radiofind.statistics.period.ReportingWindow;
 import com.radiofind.statistics.period.StatisticsPeriod;
 import com.radiofind.track.dto.TrackSummaryResponse;
@@ -23,10 +24,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -61,21 +61,24 @@ class StatisticsServiceTest {
   @Test
   void timelineHasAPointForEveryDayEvenWithoutActivity() {
     CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).build());
-    ReportingWindow window = new ReportingWindow(ZURICH, ChronoUnit.DAYS, LocalDate.parse("2026-11-13"), 7);
-    when(statisticsRepository.playsPerBucket(7L, window)).thenReturn(Map.of(LocalDate.parse("2026-11-14"), 5L));
-    when(statisticsRepository.downloadsPerBucket(7L, window)).thenReturn(Map.of(LocalDate.parse("2026-11-19"), 2L));
+    ReportingWindow window =
+        new ReportingWindow(ZURICH, Granularity.DAY, LocalDateTime.parse("2026-11-13T00:00"), 7);
+    when(statisticsRepository.playsPerBucket(7L, window))
+        .thenReturn(Map.of(LocalDateTime.parse("2026-11-14T00:00"), 5L));
+    when(statisticsRepository.downloadsPerBucket(7L, window))
+        .thenReturn(Map.of(LocalDateTime.parse("2026-11-19T00:00"), 2L));
 
     StatisticsResponse statistics = statisticsService.getStatistics(ada, StatisticsPeriod.LAST_7_DAYS, ZURICH);
 
     assertEquals(
         List.of(
-            new TimelinePoint(LocalDate.parse("2026-11-13"), 0, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-14"), 5, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-15"), 0, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-16"), 0, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-17"), 0, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-18"), 0, 0),
-            new TimelinePoint(LocalDate.parse("2026-11-19"), 0, 2)),
+            new TimelinePoint(LocalDateTime.parse("2026-11-13T00:00"), 0, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-14T00:00"), 5, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-15T00:00"), 0, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-16T00:00"), 0, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-17T00:00"), 0, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-18T00:00"), 0, 0),
+            new TimelinePoint(LocalDateTime.parse("2026-11-19T00:00"), 0, 2)),
         statistics.timeline());
   }
 
@@ -91,6 +94,17 @@ class StatisticsServiceTest {
 
     assertEquals(new Totals(120, 8, 14, 60), statistics.current());
     assertEquals(new Totals(100, 10, 7, 61), statistics.previous());
+  }
+
+  @Test
+  void timelineOfTheLast24HoursIsSplitIntoHours() {
+    CustomUserDetails ada = new CustomUserDetails(User.builder().id(7L).build());
+
+    StatisticsResponse statistics = statisticsService.getStatistics(ada, StatisticsPeriod.LAST_24_HOURS, ZURICH);
+
+    assertEquals(Granularity.HOUR, statistics.granularity());
+    assertEquals(LocalDateTime.parse("2026-11-18T12:00"), statistics.timeline().getFirst().start());
+    assertEquals(LocalDateTime.parse("2026-11-19T11:00"), statistics.timeline().getLast().start());
   }
 
   @Test
